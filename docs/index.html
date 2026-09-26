@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CV Blueprint — Lionel Payet</title>
 <meta name="description" content="Éditeur de CV en blocs, thème ingénierie/blueprint, export PDF et LaTeX.">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap">
 <style>
   :root {
     --bg: #050f0b;
@@ -25,6 +25,9 @@
     --critical: #ff6b6b;
     --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     --sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    /* Printed CV document only — kept separate from the tool's own --sans/--mono chrome fonts. */
+    --cv-body: "Source Sans 3", "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    --cv-display: "Source Serif 4", Georgia, "Times New Roman", serif;
     color-scheme: dark;
   }
 
@@ -236,6 +239,8 @@
     padding: 3px 6px;
   }
 
+  .organize-btn { width: 100%; margin-bottom: 8px; }
+
   /* ---------- Layer panel ---------- */
   .layer-row {
     display: flex; align-items: center; gap: 8px;
@@ -388,6 +393,7 @@
     flex: 1;
     overflow: auto;
     padding: 8px 10px;
+    font-family: var(--cv-body);
     font-size: 11.5px;
     line-height: 1.42;
     color: var(--ink);
@@ -397,9 +403,9 @@
     outline-offset: -1px;
     cursor: text;
   }
-  .cv-block .body h3 { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.01em; }
+  .cv-block .body h3 { font-family: var(--cv-display); font-size: 1.13em; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.01em; }
   .cv-block .body .role { font-weight: 600; color: var(--ink); }
-  .cv-block .body .meta { font-family: var(--mono); font-size: 10px; color: var(--ink-dim); margin-bottom: 4px; }
+  .cv-block .body .meta { font-family: var(--cv-body); font-size: 0.87em; color: var(--ink-dim); margin-bottom: 4px; }
   .cv-block .body ul { margin: 4px 0 0 16px; padding: 0; }
   .cv-block .body li { margin-bottom: 3px; }
   .cv-block .body p { margin: 0 0 6px; }
@@ -421,9 +427,9 @@
   .cv-block.selected .resize::after { border-color: var(--accent); }
 
   #contact-block .body { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
-  #contact-block .name { font-family: var(--sans); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
-  #contact-block .role { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: 0.05em; }
-  #contact-block .contact-line { font-family: var(--mono); font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
+  #contact-block .name { font-family: var(--cv-display); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
+  #contact-block .role { font-family: var(--cv-body); font-size: 10.5px; color: var(--accent); letter-spacing: 0.02em; }
+  #contact-block .contact-line { font-family: var(--cv-body); font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
 
   /* ---------- Photo block ---------- */
   .photo-block .body { padding: 0; display: flex; overflow: hidden; }
@@ -496,14 +502,14 @@
     border-radius: 4px;
     padding: 12px 14px;
   }
-  .readonly-list .cv-block-ro .body { font-size: 12.5px; line-height: 1.5; color: var(--ink); }
-  .readonly-list .cv-block-ro .body h3 { font-family: var(--sans); font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+  .readonly-list .cv-block-ro .body { font-family: var(--cv-body); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+  .readonly-list .cv-block-ro .body h3 { font-family: var(--cv-display); font-size: 14px; color: var(--accent); margin-bottom: 4px; }
   .readonly-list .cv-block-ro .body ul { margin: 4px 0 0 18px; padding: 0; }
   .readonly-list .cv-block-ro .body li { margin-bottom: 4px; }
   .readonly-list .cv-block-ro .body strong { color: var(--accent); }
-  .readonly-list #contact-ro .name { font-size: 20px; font-weight: 700; }
-  .readonly-list #contact-ro .role { font-family: var(--mono); font-size: 11px; color: var(--accent); }
-  .readonly-list #contact-ro .contact-line { font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); margin-top: 4px; }
+  .readonly-list #contact-ro .name { font-family: var(--cv-display); font-size: 20px; font-weight: 700; }
+  .readonly-list #contact-ro .role { font-family: var(--cv-body); font-size: 11px; color: var(--accent); }
+  .readonly-list #contact-ro .contact-line { font-family: var(--cv-body); font-size: 10.5px; color: var(--ink-dim); margin-top: 4px; }
 
   /* ---------- Title block strip ---------- */
   .titleblock {
@@ -623,6 +629,8 @@
 
       <div class="panel">
         <h2>Blocs <span class="n" id="block-count">(9)</span></h2>
+        <button class="ghost organize-btn" id="organize-btn" type="button">Organiser (ajuster taille &amp; police)</button>
+        <p class="export-hint">Ajuste la hauteur et la taille de police de chaque bloc de texte à son contenu, puis réorganise les blocs sans chevauchement. Contact et photo ne sont pas modifiés.</p>
         <div id="layer-list"></div>
       </div>
 
@@ -679,6 +687,14 @@
   "use strict";
 
   var GRID_COLS = 12, GRID_ROWS = 32;
+
+  /* Organiser tuning: text blocks only (contact/photo are exempt everywhere below). */
+  var DEFAULT_BODY_FONT_SIZE = 11.5; // matches the .cv-block .body CSS default
+  var MIN_BODY_FONT_SIZE = 9;
+  var MAX_BODY_FONT_SIZE = 13;
+  var FONT_STEP = 0.5;
+  var ORGANIZE_PAD_PX = 10; // small breathing room beyond measured content height
+  var MIN_ROWSPAN = 2; // matches the manual resize-handle floor
 
   var DEFAULT_BLOCKS = [
     {
@@ -849,7 +865,10 @@
       body.className = "body";
       if (b.kind === "contact") body.innerHTML = contactMarkup();
       else if (b.kind === "photo") body.appendChild(photoBodyMarkup(b));
-      else body.innerHTML = b.html;
+      else {
+        body.innerHTML = b.html;
+        body.style.fontSize = (b.fontSize || DEFAULT_BODY_FONT_SIZE) + "px";
+      }
       el.appendChild(body);
 
       var resize = document.createElement("div");
@@ -1065,6 +1084,74 @@
   function bumpRevision() {
     state.revisions++;
     document.getElementById("rev-count").textContent = state.revisions;
+  }
+
+  // On-demand tidy pass: fits each content block's box to its own text, scales
+  // its font-size to use that box evenly (shrink to fit / grow to fill), then
+  // re-packs with the same collision resolution manual drag/resize already use.
+  // Contact and photo blocks are left exactly as the user sized them.
+  function organizeBlocks() {
+    if (!isDesktop()) return;
+    var cellH = canvasEl.getBoundingClientRect().height / GRID_ROWS;
+    if (!cellH) return;
+
+    state.blocks.forEach(function (b) {
+      if (b.kind !== "text") return;
+      var el = document.getElementById(b.id);
+      if (!el) return;
+      var body = el.querySelector(".body");
+      var handle = el.querySelector(".handle");
+      var handleH = handle ? handle.getBoundingClientRect().height : 0;
+
+      // 1) Height: measure natural content height at the default font size,
+      // then convert to whole grid rows with a little padding so it doesn't
+      // look cramped or leave a big dead gap at the bottom.
+      body.style.fontSize = DEFAULT_BODY_FONT_SIZE + "px";
+      var naturalHeight = body.scrollHeight;
+      var rowsNeeded = clamp(Math.ceil((naturalHeight + ORGANIZE_PAD_PX) / cellH), MIN_ROWSPAN, GRID_ROWS);
+      b.rowSpan = rowsNeeded;
+
+      // 2) Font size: fit within the box just chosen — shrink in small steps
+      // if it still overflows, or grow toward a sane max if there's slack,
+      // so blocks read as similarly dense rather than cramped vs. sparse.
+      var availableBodyHeight = rowsNeeded * cellH - handleH;
+      var fs = DEFAULT_BODY_FONT_SIZE;
+      body.style.fontSize = fs + "px";
+      var contentH = body.scrollHeight;
+
+      if (contentH > availableBodyHeight) {
+        while (fs > MIN_BODY_FONT_SIZE && contentH > availableBodyHeight) {
+          fs = Math.max(MIN_BODY_FONT_SIZE, fs - FONT_STEP);
+          body.style.fontSize = fs + "px";
+          contentH = body.scrollHeight;
+        }
+      } else {
+        while (fs < MAX_BODY_FONT_SIZE) {
+          var nextFs = Math.min(MAX_BODY_FONT_SIZE, fs + FONT_STEP);
+          body.style.fontSize = nextFs + "px";
+          if (body.scrollHeight <= availableBodyHeight) {
+            fs = nextFs;
+          } else {
+            body.style.fontSize = fs + "px";
+            break;
+          }
+          if (nextFs === MAX_BODY_FONT_SIZE) break;
+        }
+      }
+      b.fontSize = fs;
+      body.style.fontSize = fs + "px";
+    });
+
+    // 3) Re-pack with the exact same collision logic manual drag/resize use —
+    // contact-block is exempt from resizing, so it anchors the layout.
+    resolveCollisions("contact-block");
+    applyGridPositions();
+    bumpRevision();
+    saveState();
+    checkOverflow();
+    recomputeAts();
+    recomputeMatch();
+    showToast("Blocs organisés : taille et police ajustées à leur contenu.");
   }
 
   function checkOverflow() {
@@ -1458,6 +1545,8 @@
   document.getElementById("export-txt-btn").addEventListener("click", function () {
     copyToClipboard(generatePlainText(), "Texte copié dans le presse-papiers");
   });
+
+  document.getElementById("organize-btn").addEventListener("click", organizeBlocks);
 
   /* ---------- Reset ---------- */
   document.getElementById("reset-btn").addEventListener("click", function () {
