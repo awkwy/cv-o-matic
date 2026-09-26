@@ -26,6 +26,28 @@ Then view the resulting PNG. The sibling `cours` project
 (`/home/awkwy/firstmate/projects/cours/eleve/render.sh`) uses the same
 headless-print-then-rasterize approach.
 
+## Typography: two separate font systems
+
+The tool's own chrome (rulers, buttons, panels, ATS text) uses `--sans`/`--mono`
+(IBM Plex Sans/Mono) — that's the deliberate "blueprint" aesthetic, keep it.
+The printed CV content (`.cv-block .body`, its read-only mobile mirror, and
+`#contact-block`) uses separate `--cv-body`/`--cv-display` variables (Source
+Sans 3 / Source Serif 4) so the two never mix. Don't add a third typeface to
+the CV content, and don't point CV content at `--mono`.
+
+Each text block can carry a per-block `fontSize` (px) set by the Organiser
+action (see below); `h3`/`.meta` sizes inside `.cv-block .body` are in `em`
+so they scale with it. Contact and photo blocks don't use `fontSize`.
+
+## Organiser action
+
+The "Organiser" button (rail, Blocs panel) auto-fits each text block's
+`rowSpan` to its content and its `fontSize` to fill that box evenly, then
+re-packs via the existing `resolveCollisions`/`applyGridPositions`. It's
+on-demand only (button click, not live-on-edit) and skips contact/photo
+blocks. See `organizeBlocks()` in `docs/index.html` for the tuning constants
+(min/max font size, padding, row floor).
+
 ## LaTeX export
 
 `.tex` export is a real file download (`Blob` + `<a download>`), with a
