@@ -26,6 +26,29 @@ Then view the resulting PNG. The sibling `cours` project
 (`/home/awkwy/firstmate/projects/cours/eleve/render.sh`) uses the same
 headless-print-then-rasterize approach.
 
+`.cv-block .body p` (and its read-only mirror) is `text-align: justify` with
+`hyphens: auto` — relies on the root `<html lang="fr">` for the hyphenation
+dictionary to engage. The `chromium` package in this sandbox has no
+hyphenation dictionaries installed, so a headless render here will never show
+an actual hyphen break (long unbreakable words just overflow instead) even
+though the CSS is correct and end-user browsers with dictionaries installed
+hyphenate normally. Don't mistake that sandbox gap for a CSS regression —
+verify justify quality by checking word-gap size on real CV content instead
+of by looking for hyphens in the screenshot.
+
+`.cv-block .body` also carries `overflow-wrap: break-word` (any text node, not
+just `<p>`) so a single word too long for the column breaks instead of
+overflowing the box width into the block beside it, and
+`hyphenate-limit-chars: 6 3 3` on the `<p>` justify rule keeps hyphenation from
+stranding a tiny orphan fragment alone on a line. Print's `.cv-block` /
+`.cv-block .body` are `overflow: hidden !important`, not `visible` — a block
+whose content doesn't fit its `rowSpan` must clip, not bleed down into the
+block below it in the printed page. If you touch either of these, re-verify
+with the same reused-profile trick documented in this file's history (inject
+oversized text into the saved draft's block `html`, then
+`chromium --print-to-pdf` reusing that profile's `--user-data-dir` so the
+draft carries over) rather than trusting the CSS by inspection.
+
 ## Typography: two separate font systems
 
 The tool's own chrome (rulers, buttons, panels, ATS text) uses `--sans`/`--mono`
@@ -54,6 +77,23 @@ per-block row clamp can still leave a residual overlap), so
 and swaps in a warning toast instead of the success toast when one remains —
 keep that check if you touch the function. The button and its hint are
 `desktop-only`, matching the other desktop-only editing affordances.
+
+## Photo block: two images, not one
+
+The photo block keeps two data URLs, not one: `originalDataUrl` (a
+moderately-higher-res upload, crop source only) and `dataUrl` (the
+low-res baked result actually displayed/printed/exported). "Changer"
+(upload) sets both. "Rogner" opens an inline pan/zoom crop dialog
+(`openCropOverlay()` in `docs/index.html`) sized to the block's own
+on-screen aspect ratio; "Valider" re-bakes `dataUrl` from
+`originalDataUrl` at the current pan/zoom and leaves `originalDataUrl`
+untouched, so cropping is repeatable. The delete action is a small red
+`.photo-delete-btn` (×) pinned top-right of the thumbnail — deliberately
+separate from the bottom `.photo-toolbar` (Changer/Rogner), not a third
+toolbar button — and nulls both URLs back to the empty-placeholder state.
+A saved draft from before this existed has `dataUrl` but no
+`originalDataUrl` — the toolbar hides "Rogner" rather than crash; keep
+that fallback if you touch this block's rendering.
 
 ## LaTeX export
 
