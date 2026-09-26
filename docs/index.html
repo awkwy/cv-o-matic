@@ -121,6 +121,13 @@
   }
   html.rail-collapsed .layout { grid-template-columns: 0px 18px 1fr; }
   html.rail-collapsed .rail { display: none; }
+  /* .rail leaving the grid on collapse must not let auto-placement shift
+     .splitter/.canvas-wrap into its now-empty tracks — pin them explicitly.
+     Scoped to the desktop 3-column layout; mobile and print use 1 column. */
+  @media (min-width: 880px) {
+    .splitter { grid-column: 2; }
+    .canvas-wrap { grid-column: 3; }
+  }
 
   #rail-toggle .icon-open { display: none; }
   html.rail-collapsed #rail-toggle .icon-close { display: none; }
@@ -558,6 +565,7 @@
     .canvas-tip, .page-overflow-banner, .titleblock, .footnote,
     .ruler-top, .ruler-left, .page-frame .corner { display: none !important; }
     .layout { grid-template-columns: 1fr !important; column-gap: 0 !important; }
+    .canvas-wrap { grid-column: auto !important; }
     .page-frame { grid-template-columns: 0 1fr !important; grid-template-rows: 0 1fr !important; gap: 0 !important; }
     .canvas-slot { grid-column: 1 / -1; grid-row: 1 / -1; }
     .readonly-list { display: none !important; }
