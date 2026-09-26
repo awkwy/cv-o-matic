@@ -1,0 +1,1489 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CV Blueprint — Lionel Payet</title>
+<meta name="description" content="Éditeur de CV en blocs, thème ingénierie/blueprint, export PDF et LaTeX.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #050f0b;
+    --bg-panel: #081a13;
+    --bg-panel-2: #0b2117;
+    --line-minor: rgba(86, 227, 154, 0.08);
+    --line-major: rgba(86, 227, 154, 0.16);
+    --border: #163826;
+    --border-strong: #235339;
+    --ink: #dff7e9;
+    --ink-dim: #7fae95;
+    --ink-faint: #4c7364;
+    --accent: #46f2a0;
+    --accent-dim: #23895c;
+    --accent-glow: rgba(70, 242, 160, 0.35);
+    --warn: #f5c04a;
+    --critical: #ff6b6b;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    padding-inline: 16px;
+    margin: 0;
+  }
+
+  h1, h2, h3 { font-family: var(--mono); text-wrap: balance; margin: 0; }
+
+  .app {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-block: 20px 40px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .topbar .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .topbar .brand .mark {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .topbar h1 { font-size: 18px; letter-spacing: 0.02em; }
+  .topbar .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em; }
+  .topbar .actions { display: flex; gap: 8px; align-items: center; }
+
+  button.ghost {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--ink-dim);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 7px 11px;
+    cursor: pointer;
+  }
+  button.ghost:hover { color: var(--accent); border-color: var(--accent-dim); }
+  button.ghost:focus-visible, a:focus-visible, [tabindex]:focus-visible, [contenteditable]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .desktop-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    border: 1px dashed var(--border-strong);
+    border-radius: 3px;
+    padding: 5px 8px;
+  }
+  html.is-desktop .desktop-badge.mobile-only { display: none; }
+  html:not(.is-desktop) .desktop-badge.desktop-only { display: none; }
+
+  /* ---------- Layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 18px 1fr;
+    column-gap: 14px;
+    align-items: start;
+    transition: grid-template-columns .18s ease;
+  }
+  @media (max-width: 879px) {
+    .layout { grid-template-columns: 1fr; }
+    .splitter { display: none; }
+  }
+  html.rail-collapsed .layout { grid-template-columns: 0px 18px 1fr; }
+  html.rail-collapsed .rail { display: none; }
+
+  #rail-toggle .icon-open { display: none; }
+  html.rail-collapsed #rail-toggle .icon-close { display: none; }
+  html.rail-collapsed #rail-toggle .icon-open { display: inline; }
+
+  /* Persistent split handle, Overleaf-style: small, discreet, always reachable
+     without hunting for it — sticks near the top of the viewport instead of
+     spanning the whole (very tall) page. */
+  .splitter {
+    position: sticky;
+    top: 12px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--ink-faint);
+    user-select: none;
+  }
+  .splitter:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .splitter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .splitter .chevron {
+    font-family: var(--mono);
+    font-size: 12px;
+    transition: transform .18s ease;
+  }
+  html.rail-collapsed .splitter .chevron { transform: rotate(180deg); }
+
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .panel + .panel { margin-top: 14px; }
+  .panel h2 {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    margin-bottom: 10px;
+  }
+  .panel h2 .n { color: var(--ink-faint); }
+
+  /* ---------- Score gauges ---------- */
+  .gauge { margin-bottom: 4px; }
+  .gauge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+  .gauge-row .val { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .gauge-row .val.good { color: var(--accent); }
+  .gauge-row .val.mid { color: var(--warn); }
+  .gauge-row .val.low { color: var(--critical); }
+  .gauge-track {
+    height: 6px;
+    background: #0e2419;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    box-shadow: 0 0 8px var(--accent-glow);
+    transition: width 0.4s ease;
+  }
+  .gauge-fill.mid { background: linear-gradient(90deg, #7a5a1a, var(--warn)); box-shadow: 0 0 8px rgba(245,192,74,.3); }
+  .gauge-fill.low { background: linear-gradient(90deg, #6b1f1f, var(--critical)); box-shadow: 0 0 8px rgba(255,107,107,.3); }
+
+  .check-list { list-style: none; margin-top: 10px; display: grid; gap: 6px; padding: 0; }
+  .check-list li {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-size: 12px; color: var(--ink-dim); line-height: 1.35;
+  }
+  .check-list li .dot {
+    width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex: none;
+    background: var(--ink-faint);
+  }
+  .check-list li.ok .dot { background: var(--accent); box-shadow: 0 0 5px var(--accent-glow); }
+  .check-list li.ok { color: var(--ink); }
+  .check-list li.warn .dot { background: var(--warn); }
+
+  .job-input {
+    width: 100%;
+    min-height: 84px;
+    resize: vertical;
+    background: #071810;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 8px;
+    line-height: 1.4;
+  }
+  .job-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .job-input::placeholder { color: var(--ink-faint); }
+  .job-hint { font-size: 10.5px; color: var(--ink-faint); margin-top: 6px; line-height: 1.4; }
+  .match-empty { font-size: 12px; color: var(--ink-faint); font-style: italic; margin-top: 4px; }
+
+  .missing-skills { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .missing-skills .chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--warn);
+    border: 1px solid #6b551f;
+    background: rgba(245, 192, 74, 0.08);
+    border-radius: 3px;
+    padding: 3px 6px;
+  }
+
+  /* ---------- Layer panel ---------- */
+  .layer-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .layer-row:hover { background: var(--bg-panel-2); }
+  .layer-row.active { border-color: var(--accent-dim); background: var(--bg-panel-2); }
+  .layer-row .name { flex: 1; }
+  .layer-row button.pencil {
+    background: none; border: none; color: var(--ink-faint); cursor: pointer;
+    width: 20px; height: 20px; display: grid; place-items: center; border-radius: 3px;
+  }
+  .layer-row button.pencil:hover { color: var(--accent); background: rgba(70,242,160,.1); }
+  .layer-row button.pencil.editing { color: var(--bg); background: var(--accent); }
+  html:not(.is-desktop) .layer-row button.pencil { display: none; }
+
+  /* ---------- Canvas ---------- */
+  .canvas-wrap {
+    position: relative;
+  }
+  .canvas-tip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  html:not(.is-desktop) .canvas-tip.desktop-only { display: none; }
+
+  .page-frame {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    grid-template-rows: 22px 1fr;
+    gap: 4px;
+  }
+  html:not(.is-desktop) .page-frame { grid-template-columns: 0 1fr; }
+  html:not(.is-desktop) .page-frame .ruler { display: none; }
+  .page-frame .corner { grid-column: 1; grid-row: 1; }
+  .ruler {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+  .ruler { color: var(--critical); }
+  .ruler-top {
+    grid-column: 2; grid-row: 1;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 2px 2px;
+    border-bottom: 1px dashed var(--critical);
+  }
+  .ruler-left {
+    grid-column: 1; grid-row: 2;
+    display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;
+    padding: 2px 3px 0 0;
+    border-right: 1px dashed var(--critical);
+    writing-mode: vertical-rl;
+  }
+  .canvas-slot { grid-column: 2; grid-row: 2; position: relative; }
+
+  .page-overflow-banner {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    padding: 7px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-strong);
+    color: var(--ink-dim);
+  }
+  .page-overflow-banner.ok { color: var(--accent); border-color: var(--accent-dim); background: rgba(70,242,160,.06); }
+  .page-overflow-banner.bad { color: var(--critical); border-color: #6b2626; background: rgba(255,107,107,.1); }
+  html:not(.is-desktop) .page-overflow-banner.desktop-only { display: none; }
+
+  .blueprint-canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 794 / 1123;
+    background-color: var(--bg-panel);
+    border: 2px solid var(--critical);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px var(--bg), 0 0 16px rgba(255, 107, 107, 0.25), 0 8px 28px rgba(0,0,0,.5);
+    background-image:
+      linear-gradient(var(--line-minor) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-minor) 1px, transparent 1px),
+      linear-gradient(var(--line-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-major) 1px, transparent 1px);
+    background-size:
+      calc(100% / 12) calc(100% / 32),
+      calc(100% / 12) calc(100% / 32),
+      calc(100% / 3) calc(100% / 8),
+      calc(100% / 3) calc(100% / 8);
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(32, 1fr);
+    gap: 0;
+    padding: 10px;
+  }
+  html:not(.is-desktop) .blueprint-canvas { display: none; }
+
+  .cv-block {
+    position: relative;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  .cv-block.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 14px var(--accent-glow); }
+  .cv-block .handle {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    background: #0a1e14;
+    border-bottom: 1px solid var(--border);
+    padding: 4px 7px;
+    cursor: grab;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    flex: none;
+  }
+  .cv-block .handle:active { cursor: grabbing; }
+  .cv-block.selected .handle { color: var(--accent); }
+  .cv-block .handle .edit-btn {
+    background: none; border: none; color: inherit; cursor: pointer;
+    width: 16px; height: 16px; display: grid; place-items: center; padding: 0;
+  }
+  .cv-block .handle .edit-btn:hover { color: var(--accent); }
+  .cv-block .handle .overflow-flag {
+    display: none;
+    font-size: 9px;
+    color: var(--critical);
+    letter-spacing: 0.04em;
+  }
+  .cv-block.overflow { border-color: var(--critical); box-shadow: 0 0 0 1px var(--critical); }
+  .cv-block.overflow .handle { color: var(--critical); }
+  .cv-block.overflow .handle .overflow-flag { display: inline; }
+  .cv-block .body {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    line-height: 1.42;
+    color: var(--ink);
+  }
+  .cv-block .body[contenteditable="true"] {
+    outline: 1px dashed var(--accent-dim);
+    outline-offset: -1px;
+    cursor: text;
+  }
+  .cv-block .body h3 { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.01em; }
+  .cv-block .body .role { font-weight: 600; color: var(--ink); }
+  .cv-block .body .meta { font-family: var(--mono); font-size: 10px; color: var(--ink-dim); margin-bottom: 4px; }
+  .cv-block .body ul { margin: 4px 0 0 16px; padding: 0; }
+  .cv-block .body li { margin-bottom: 3px; }
+  .cv-block .body p { margin: 0 0 6px; }
+  .cv-block .body p:last-child { margin-bottom: 0; }
+  .cv-block .body strong { color: var(--accent); font-weight: 600; }
+  .cv-block .body .skill-cat { font-weight: 600; color: var(--ink); }
+
+  .cv-block .resize {
+    position: absolute; right: 0; bottom: 0;
+    width: 16px; height: 16px;
+    cursor: nwse-resize;
+  }
+  .cv-block .resize::after {
+    content: ""; position: absolute; right: 3px; bottom: 3px;
+    width: 7px; height: 7px;
+    border-right: 2px solid var(--ink-faint);
+    border-bottom: 2px solid var(--ink-faint);
+  }
+  .cv-block.selected .resize::after { border-color: var(--accent); }
+
+  #contact-block .body { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+  #contact-block .name { font-family: var(--sans); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
+  #contact-block .role { font-family: var(--mono); font-size: 10.5px; color: var(--accent); letter-spacing: 0.05em; }
+  #contact-block .contact-line { font-family: var(--mono); font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
+
+  /* ---------- Photo block ---------- */
+  .photo-block .body { padding: 0; display: flex; overflow: hidden; }
+  .photo-fill {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-empty {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    text-align: center;
+    padding: 6px;
+  }
+  .photo-empty svg { opacity: .6; }
+  .photo-upload-btn {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    background: rgba(70,242,160,.08);
+    border: 1px solid var(--accent-dim);
+    border-radius: 3px;
+    padding: 3px 6px;
+    cursor: pointer;
+  }
+  .photo-block-ro { position: relative; }
+  .photo-block-ro .photo-fill { width: 96px; height: 96px; border-radius: 4px; float: right; margin-left: 12px; }
+
+  /* ---------- Export panel ---------- */
+  .export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .export-row button.ghost { flex: 1; min-width: 0; }
+  .export-row.primary button.ghost { color: var(--accent); border-color: var(--accent-dim); }
+  .export-hint { font-size: 10.5px; color: var(--ink-faint); margin-top: 8px; line-height: 1.5; }
+  .export-hint:first-of-type { margin-top: 0; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translate(-50%, 12px);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    padding: 9px 16px;
+    border-radius: 5px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 50;
+    max-width: calc(100% - 32px);
+    text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- Read-only stacked view (narrow screens) ---------- */
+  .readonly-list { display: none; flex-direction: column; gap: 12px; }
+  html:not(.is-desktop) .readonly-list { display: flex; }
+  .readonly-list .cv-block-ro {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  .readonly-list .cv-block-ro .body { font-size: 12.5px; line-height: 1.5; color: var(--ink); }
+  .readonly-list .cv-block-ro .body h3 { font-family: var(--sans); font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+  .readonly-list .cv-block-ro .body ul { margin: 4px 0 0 18px; padding: 0; }
+  .readonly-list .cv-block-ro .body li { margin-bottom: 4px; }
+  .readonly-list .cv-block-ro .body strong { color: var(--accent); }
+  .readonly-list #contact-ro .name { font-size: 20px; font-weight: 700; }
+  .readonly-list #contact-ro .role { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .readonly-list #contact-ro .contact-line { font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); margin-top: 4px; }
+
+  /* ---------- Title block strip ---------- */
+  .titleblock {
+    margin-top: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-panel);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    font-family: var(--mono);
+  }
+  @media (max-width: 640px) { .titleblock { grid-template-columns: repeat(2, 1fr); } }
+  .titleblock .cell {
+    padding: 8px 12px;
+    border-right: 1px solid var(--border);
+  }
+  .titleblock .cell:last-child { border-right: none; }
+  .titleblock .cell .k { font-size: 9px; letter-spacing: 0.1em; color: var(--ink-faint); }
+  .titleblock .cell .v { font-size: 11.5px; color: var(--ink); margin-top: 2px; }
+
+  .footnote { margin-top: 12px; font-size: 10.5px; color: var(--ink-faint); line-height: 1.5; }
+
+  /* ---------- Print: clean A4 page only, no editor chrome ---------- */
+  @media print {
+    :root {
+      --bg: #ffffff;
+      --bg-panel: #ffffff;
+      --bg-panel-2: #ffffff;
+      --border: #d8d8d8;
+      --border-strong: transparent;
+      --ink: #141414;
+      --ink-dim: #3a3a3a;
+      --ink-faint: #6a6a6a;
+      --accent: #0b5c34;
+      --accent-dim: #0b5c34;
+      --accent-glow: transparent;
+      --line-minor: transparent;
+      --line-major: transparent;
+      --critical: transparent;
+    }
+    body { background: #fff !important; padding: 0; margin: 0; }
+    .app { max-width: none; padding: 0; margin: 0; }
+    .topbar, .rail, .splitter, #toast,
+    .canvas-tip, .page-overflow-banner, .titleblock, .footnote,
+    .ruler-top, .ruler-left, .page-frame .corner { display: none !important; }
+    .layout { grid-template-columns: 1fr !important; column-gap: 0 !important; }
+    .page-frame { grid-template-columns: 0 1fr !important; grid-template-rows: 0 1fr !important; gap: 0 !important; }
+    .canvas-slot { grid-column: 1 / -1; grid-row: 1 / -1; }
+    .readonly-list { display: none !important; }
+    .blueprint-canvas {
+      display: grid !important;
+      width: 210mm;
+      height: 297mm;
+      aspect-ratio: auto;
+      padding: 12mm;
+      border: none !important;
+      box-shadow: none !important;
+      background-image: none !important;
+    }
+    .cv-block {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      overflow: visible !important;
+    }
+    .cv-block .handle, .cv-block .resize { display: none !important; }
+    .cv-block .body { overflow: visible !important; color: #141414 !important; }
+    .cv-block .body[contenteditable] { outline: none !important; cursor: default !important; }
+    .photo-block .photo-upload-btn, .photo-block .photo-empty { display: none !important; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">CV·01</span>
+      <div>
+        <h1>Blueprint — Lionel Payet</h1>
+        <div class="sub">ÉDITEUR DE CV EN BLOCS</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="desktop-badge mobile-only">édition indisponible sur cet écran</span>
+      <button class="ghost" id="rail-toggle" type="button" aria-label="Masquer ou afficher les panneaux" aria-pressed="false">
+        <span class="icon-close">☰ Masquer les panneaux</span>
+        <span class="icon-open">☰ Afficher les panneaux</span>
+      </button>
+      <button class="ghost" id="reset-btn" type="button">Réinitialiser</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Left rail -->
+    <div class="rail">
+      <div class="panel">
+        <h2>Score ATS</h2>
+        <div class="gauge">
+          <div class="gauge-row"><span>Compatibilité</span><span class="val" id="ats-val">—</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="ats-fill" style="width:0%"></div></div>
+        </div>
+        <ul class="check-list" id="ats-checks"></ul>
+      </div>
+
+      <div class="panel">
+        <h2>Score de correspondance</h2>
+        <div class="gauge">
+          <div class="gauge-row"><span>Offre collée</span><span class="val" id="match-val">—</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="match-fill" style="width:0%"></div></div>
+        </div>
+        <p class="match-empty" id="match-empty">Collez une offre ci-dessous pour la calculer.</p>
+        <div id="missing-wrap" class="missing-skills" hidden></div>
+        <textarea class="job-input" id="job-input" placeholder="Coller ici le texte d'une offre d'emploi…"></textarea>
+        <p class="job-hint">Estimation par recoupement de mots-clés — pas un score officiel ATS, juste un repère.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Blocs <span class="n" id="block-count">(9)</span></h2>
+        <div id="layer-list"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Export</h2>
+        <p class="export-hint">PDF — mise en page A4 propre, sans les outils d'édition.</p>
+        <div class="export-row primary">
+          <button class="ghost" id="export-pdf-btn" type="button">Télécharger / Imprimer en PDF</button>
+        </div>
+        <p class="export-hint">LaTeX — brouillon généré depuis les blocs, à revoir avant compilation.</p>
+        <div class="export-row">
+          <button class="ghost" id="export-tex-download-btn" type="button">Télécharger le .tex</button>
+          <button class="ghost" id="export-tex-copy-btn" type="button">Copier le .tex</button>
+        </div>
+        <div class="export-row">
+          <button class="ghost" id="export-txt-btn" type="button">Copier le texte</button>
+        </div>
+        <p class="export-hint">Le bouton PDF ouvre la boîte d'impression du navigateur : choisissez « Enregistrer en PDF » comme destination.</p>
+      </div>
+    </div>
+
+    <!-- Split handle: always visible, click to show/hide the side panels -->
+    <div class="splitter" id="rail-splitter" role="button" tabindex="0" aria-label="Afficher ou masquer les panneaux" aria-pressed="false">
+      <span class="chevron">❮</span>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrap">
+      <p class="canvas-tip desktop-only">Glissez l'en-tête d'un bloc pour le déplacer, tirez le coin pour le redimensionner, cliquez le crayon pour éditer le texte.</p>
+      <div class="page-overflow-banner ok desktop-only" id="overflow-banner">Tient sur une page A4 ✓</div>
+      <div class="page-frame">
+        <div class="ruler ruler-top" id="ruler-top"><span>0</span><span>210 mm</span></div>
+        <div class="ruler ruler-left" id="ruler-left"><span>0</span><span>297 mm</span></div>
+        <div class="canvas-slot">
+          <div class="blueprint-canvas" id="canvas"></div>
+        </div>
+      </div>
+      <div class="readonly-list" id="readonly-list"></div>
+
+      <div class="titleblock">
+        <div class="cell"><div class="k">DOSSIER</div><div class="v">CV_LIONEL_PAYET</div></div>
+        <div class="cell"><div class="k">PROFIL</div><div class="v">Actuariat · Data Science</div></div>
+        <div class="cell"><div class="k">FORMAT</div><div class="v">A4 · 1 page</div></div>
+        <div class="cell"><div class="k">RÉV.</div><div class="v" id="rev-count">0</div></div>
+      </div>
+      <p class="footnote">Éditeur de mise en page — contenu repris de vos sources CV réelles. Les scores sont des estimations locales, calculées dans le navigateur.</p>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GRID_COLS = 12, GRID_ROWS = 32;
+
+  var DEFAULT_BLOCKS = [
+    {
+      id: "contact-block", name: "Contact",
+      col: 1, row: 1, colSpan: 9, rowSpan: 3,
+      kind: "contact",
+      html: ""
+    },
+    {
+      id: "photo-block", name: "Photo",
+      col: 10, row: 1, colSpan: 3, rowSpan: 3,
+      kind: "photo",
+      dataUrl: null
+    },
+    {
+      id: "summary-block", name: "Profil",
+      col: 1, row: 4, colSpan: 12, rowSpan: 5,
+      kind: "text",
+      html: "<h3>Profil</h3><p>Diplômé du Master ISEFAR (Ingénierie Statistique et Économique de la Finance, de l'Assurance et du Risque) à l'Université Paris Nanterre, je recherche un poste ou une formation en <strong>actuariat</strong> ou <strong>data science</strong>. Mon parcours en modélisation statistique appliquée à l'assurance et en analyse de données de santé m'a convaincu de l'importance de croiser rigueur méthodologique et impact opérationnel.</p>"
+    },
+    {
+      id: "skills-block", name: "Compétences",
+      col: 1, row: 9, colSpan: 6, rowSpan: 8,
+      kind: "text",
+      html: "<h3>Compétences techniques</h3>" +
+        "<p><span class=\"skill-cat\">Modélisation &amp; ML —</span> <strong>R</strong>, <strong>Python</strong>, GLM, Elastic Net, Random Forest, XGBoost, modèles de survie (Kaplan-Meier, Cox)</p>" +
+        "<p><span class=\"skill-cat\">Actuariat —</span> tarification a priori/a posteriori, segmentation du risque, modèles à excès de zéros (Tobit, Double Hurdle), provisionnement</p>" +
+        "<p><span class=\"skill-cat\">Outils —</span> <strong>SQL</strong>, SAS, Git, Excel avancé, VBA, ggplot2, LaTeX</p>" +
+        "<p><span class=\"skill-cat\">Langues —</span> Français (natif), Anglais (professionnel)</p>"
+    },
+    {
+      id: "education-block", name: "Formation",
+      col: 7, row: 9, colSpan: 6, rowSpan: 6,
+      kind: "text",
+      html: "<h3>Formation</h3>" +
+        "<div class=\"role\">Master Ingénierie Statistique et Économique de la Finance, de l'Assurance et du Risque</div>" +
+        "<div class=\"meta\">Université Paris Nanterre — obtenu 09/2025</div>" +
+        "<p>Mathématiques actuarielles et financières, modélisation prédictive, séries temporelles, régression GLM, théorie du risque, segmentation et tarification, analyse de survie.</p>"
+    },
+    {
+      id: "experience-block", name: "Expérience",
+      col: 1, row: 17, colSpan: 12, rowSpan: 6,
+      kind: "text",
+      html: "<h3>Expérience professionnelle</h3>" +
+        "<div class=\"role\">Stagiaire — Chargé d'études statistiques</div>" +
+        "<div class=\"meta\">Caisse de Sécurité Sociale de Mayotte · 05/2025 – 09/2025</div>" +
+        "<ul>" +
+        "<li>Analyse statistique des demandes de soins par commune pour identifier les disparités territoriales de recours aux soins.</li>" +
+        "<li>Méthodes d'analyse multivariée (ACM, CAH) sous <strong>R</strong> pour segmenter les profils de bénéficiaires.</li>" +
+        "<li>Contribution à la rédaction du rapport d'activité annuel (Excel, VBA).</li>" +
+        "</ul>"
+    },
+    {
+      id: "academic-block", name: "Projet académique",
+      col: 1, row: 23, colSpan: 6, rowSpan: 6,
+      kind: "text",
+      html: "<h3>Projet académique</h3>" +
+        "<div class=\"role\">Tarification et comportements de souscription en assurance</div>" +
+        "<ul>" +
+        "<li>Comparaison des approches de tarification a priori et a posteriori sur données de sinistres (<strong>R</strong>).</li>" +
+        "<li>Distributions à excès de zéros : Tobit, Tobit généralisé, Double Hurdle.</li>" +
+        "<li>Analyse des durées de souscription (Kaplan-Meier, Cox).</li>" +
+        "</ul>"
+    },
+    {
+      id: "personal-block", name: "Projet personnel",
+      col: 7, row: 23, colSpan: 6, rowSpan: 8,
+      kind: "text",
+      html: "<h3>Projet personnel — Data science actuarielle</h3>" +
+        "<div class=\"role\">Gravité des accidents — Double Hurdle sur données BAAC (2024)</div>" +
+        "<ul>" +
+        "<li>Tables analytiques à partir des bases BAAC-ONISR enrichies de données météo.</li>" +
+        "<li>Approche Double Hurdle : probabilité d'accident grave × intensité conditionnelle.</li>" +
+        "<li>Relativités tarifaires par segments ; discrimination et calibration (AUC).</li>" +
+        "<li>Tableau de bord interactif (Svelte) pour l'exploration du risque.</li>" +
+        "</ul>"
+    },
+    {
+      id: "interests-block", name: "Centres d'intérêt",
+      col: 1, row: 29, colSpan: 6, rowSpan: 4,
+      kind: "text",
+      html: "<h3>Centres d'intérêt</h3>" +
+        "<p><strong>Data visualisation —</strong> simplifier la complexité, des données aux décisions.</p>" +
+        "<p><strong>Basket-ball —</strong> pratique régulière, esprit d'équipe.</p>"
+    }
+  ];
+
+  var CONTACT = {
+    name: "Lionel PAYET",
+    role: "Actuariat · Data Science — Assurance",
+    email: "lionel.payet1@gmail.com",
+    phone: "+33 6 58 19 05 06",
+    linkedin: "linkedin.com/in/lpayet",
+    github: "github.com/awkwy"
+  };
+
+  var STORAGE_KEY = "cv-blueprint-draft-v1";
+  var state = { blocks: null, revisions: 0 };
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length === DEFAULT_BLOCKS.length) {
+          state.blocks = parsed.blocks;
+          state.revisions = parsed.revisions || 0;
+          return;
+        }
+      }
+    } catch (e) { /* private mode or blocked storage: fall through to defaults */ }
+    state.blocks = DEFAULT_BLOCKS.map(function (b) { return Object.assign({}, b); });
+    state.revisions = 0;
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* ignore — per-viewer convenience only */ }
+  }
+
+  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+  function blockById(id) {
+    for (var i = 0; i < state.blocks.length; i++) if (state.blocks[i].id === id) return state.blocks[i];
+    return null;
+  }
+
+  var canvasEl = document.getElementById("canvas");
+  var readonlyEl = document.getElementById("readonly-list");
+  var layerListEl = document.getElementById("layer-list");
+  var selectedId = null;
+
+  function contactMarkup(scale) {
+    return (
+      '<div class="name">' + CONTACT.name + '</div>' +
+      '<div class="role">' + CONTACT.role + '</div>' +
+      '<div class="contact-line">' + CONTACT.email + ' · ' + CONTACT.phone + '</div>' +
+      '<div class="contact-line">' + CONTACT.linkedin + ' · ' + CONTACT.github + '</div>'
+    );
+  }
+
+  function renderCanvas() {
+    canvasEl.innerHTML = "";
+    state.blocks.forEach(function (b) {
+      var el = document.createElement("div");
+      el.className = "cv-block" + (b.id === selectedId ? " selected" : "") + (b.kind === "photo" ? " photo-block" : "");
+      el.id = b.id;
+      el.style.gridColumn = b.col + " / span " + b.colSpan;
+      el.style.gridRow = b.row + " / span " + b.rowSpan;
+      el.dataset.id = b.id;
+
+      var handle = document.createElement("div");
+      handle.className = "handle";
+      handle.innerHTML = '<span>' + b.name.toUpperCase() + '</span><span class="overflow-flag">⚠ DÉPASSE</span>';
+      var editBtn = null;
+      if (b.kind !== "photo") {
+        editBtn = document.createElement("button");
+        editBtn.className = "edit-btn";
+        editBtn.type = "button";
+        editBtn.setAttribute("aria-label", "Éditer " + b.name);
+        editBtn.innerHTML = "&#9998;";
+        handle.appendChild(editBtn);
+      }
+      el.appendChild(handle);
+
+      var body = document.createElement("div");
+      body.className = "body";
+      if (b.kind === "contact") body.innerHTML = contactMarkup();
+      else if (b.kind === "photo") body.appendChild(photoBodyMarkup(b));
+      else body.innerHTML = b.html;
+      el.appendChild(body);
+
+      var resize = document.createElement("div");
+      resize.className = "resize";
+      resize.setAttribute("aria-label", "Redimensionner " + b.name);
+      el.appendChild(resize);
+
+      canvasEl.appendChild(el);
+
+      handle.addEventListener("pointerdown", function (ev) { startDrag(ev, b.id); });
+      resize.addEventListener("pointerdown", function (ev) { startResize(ev, b.id); });
+      if (editBtn) {
+        editBtn.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          toggleEdit(b.id, body, editBtn);
+        });
+      }
+      el.addEventListener("pointerdown", function () { selectBlock(b.id); });
+      body.addEventListener("blur", function () {
+        if (b.kind !== "contact" && b.kind !== "photo") b.html = body.innerHTML;
+        saveState();
+      });
+    });
+    checkOverflow();
+  }
+
+  function photoBodyMarkup(b) {
+    var wrap = document.createElement("div");
+    wrap.style.width = "100%"; wrap.style.height = "100%"; wrap.style.position = "relative";
+    if (b.dataUrl) {
+      var img = document.createElement("img");
+      img.className = "photo-fill";
+      img.src = b.dataUrl;
+      img.alt = "Photo de profil";
+      wrap.appendChild(img);
+      var change = document.createElement("label");
+      change.className = "photo-upload-btn";
+      change.style.position = "absolute"; change.style.right = "4px"; change.style.bottom = "4px";
+      change.textContent = "Changer";
+      change.appendChild(photoInput(b));
+      wrap.appendChild(change);
+    } else {
+      var empty = document.createElement("label");
+      empty.className = "photo-empty";
+      empty.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-4 4-2-2-5 5"/></svg><span class="photo-upload-btn">+ Photo (optionnel)</span>';
+      empty.appendChild(photoInput(b));
+      wrap.appendChild(empty);
+    }
+    return wrap;
+  }
+
+  function photoInput(b) {
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.style.position = "absolute";
+    input.style.width = "1px"; input.style.height = "1px";
+    input.style.opacity = "0";
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      downscaleImage(file, 320, 320, 0.85).then(function (dataUrl) {
+        b.dataUrl = dataUrl;
+        saveState();
+        renderAll();
+      }).catch(function () {
+        showToast("Impossible de lire cette image.");
+      });
+    });
+    return input;
+  }
+
+  function downscaleImage(file, maxW, maxH, quality) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          var ratio = Math.min(1, maxW / img.width, maxH / img.height);
+          var w = Math.max(1, Math.round(img.width * ratio));
+          var h = Math.max(1, Math.round(img.height * ratio));
+          var cvs = document.createElement("canvas");
+          cvs.width = w; cvs.height = h;
+          var ctx = cvs.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          try { resolve(cvs.toDataURL("image/jpeg", quality)); }
+          catch (e) { reject(e); }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function toggleEdit(id, body, btn) {
+    var editing = body.getAttribute("contenteditable") === "true";
+    body.setAttribute("contenteditable", editing ? "false" : "true");
+    btn.classList.toggle("editing", !editing);
+    if (!editing) { body.focus(); }
+    else { recomputeAts(); checkOverflow(); }
+  }
+
+  function selectBlock(id) {
+    selectedId = id;
+    document.querySelectorAll(".cv-block").forEach(function (el) {
+      el.classList.toggle("selected", el.dataset.id === id);
+    });
+    document.querySelectorAll(".layer-row").forEach(function (el) {
+      el.classList.toggle("active", el.dataset.id === id);
+    });
+  }
+
+  function startDrag(ev, id) {
+    if (!isDesktop()) return;
+    ev.preventDefault();
+    selectBlock(id);
+    var b = blockById(id);
+    var rect = canvasEl.getBoundingClientRect();
+    var cellW = rect.width / GRID_COLS, cellH = rect.height / GRID_ROWS;
+    var startX = ev.clientX, startY = ev.clientY;
+    var startCol = b.col, startRow = b.row;
+
+    function onMove(mv) {
+      var dCol = Math.round((mv.clientX - startX) / cellW);
+      var dRow = Math.round((mv.clientY - startY) / cellH);
+      b.col = clamp(startCol + dCol, 1, GRID_COLS - b.colSpan + 1);
+      b.row = clamp(startRow + dRow, 1, GRID_ROWS - b.rowSpan + 1);
+      resolveCollisions(id);
+      applyGridPositions();
+      checkOverflow();
+    }
+    function onUp() {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      bumpRevision();
+      saveState();
+    }
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }
+
+  function startResize(ev, id) {
+    if (!isDesktop()) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    selectBlock(id);
+    var b = blockById(id);
+    var rect = canvasEl.getBoundingClientRect();
+    var cellW = rect.width / GRID_COLS, cellH = rect.height / GRID_ROWS;
+    var startX = ev.clientX, startY = ev.clientY;
+    var startSpanC = b.colSpan, startSpanR = b.rowSpan;
+
+    function onMove(mv) {
+      var dCol = Math.round((mv.clientX - startX) / cellW);
+      var dRow = Math.round((mv.clientY - startY) / cellH);
+      b.colSpan = clamp(startSpanC + dCol, 2, GRID_COLS - b.col + 1);
+      b.rowSpan = clamp(startSpanR + dRow, 2, GRID_ROWS - b.row + 1);
+      resolveCollisions(id);
+      applyGridPositions();
+      checkOverflow();
+    }
+    function onUp() {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      bumpRevision();
+      saveState();
+    }
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }
+
+  function rectsOverlap(a, b) {
+    return !(
+      a.col + a.colSpan <= b.col ||
+      b.col + b.colSpan <= a.col ||
+      a.row + a.rowSpan <= b.row ||
+      b.row + b.rowSpan <= a.row
+    );
+  }
+
+  // Keeps every block inside the page and clear of the others: whatever block
+  // is actively being moved/resized stays put, and any block it now overlaps
+  // is pushed straight down, cascading further pushes in top-to-bottom order.
+  function resolveCollisions(activeId) {
+    var active = blockById(activeId);
+    var placed = [active];
+    var others = state.blocks
+      .filter(function (b) { return b.id !== activeId; })
+      .sort(function (a, c) { return a.row - c.row; });
+
+    others.forEach(function (b) {
+      var guard = 0;
+      while (placed.some(function (p) { return rectsOverlap(b, p); }) && guard < GRID_ROWS) {
+        b.row++;
+        guard++;
+      }
+      b.row = clamp(b.row, 1, GRID_ROWS - b.rowSpan + 1);
+      placed.push(b);
+    });
+  }
+
+  function applyGridPositions() {
+    state.blocks.forEach(function (b) {
+      var el = document.getElementById(b.id);
+      if (!el) return;
+      el.style.gridColumn = b.col + " / span " + b.colSpan;
+      el.style.gridRow = b.row + " / span " + b.rowSpan;
+    });
+  }
+
+  function bumpRevision() {
+    state.revisions++;
+    document.getElementById("rev-count").textContent = state.revisions;
+  }
+
+  function checkOverflow() {
+    var anyOverflow = false;
+    state.blocks.forEach(function (b) {
+      var el = document.getElementById(b.id);
+      if (!el) return;
+      var body = el.querySelector(".body");
+      var over = body.scrollHeight > body.clientHeight + 1;
+      el.classList.toggle("overflow", over);
+      if (over) anyOverflow = true;
+    });
+    var banner = document.getElementById("overflow-banner");
+    if (anyOverflow) {
+      banner.textContent = "Du texte dépasse son bloc — réduisez-le ou agrandissez le bloc pour tenir sur une page A4.";
+      banner.className = "page-overflow-banner bad desktop-only";
+    } else {
+      banner.textContent = "Tient sur une page A4 ✓";
+      banner.className = "page-overflow-banner ok desktop-only";
+    }
+  }
+
+  function renderReadonly() {
+    readonlyEl.innerHTML = "";
+    var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    state.blocks.forEach(function (b) {
+      if (b.kind === "photo") return; // folded into the contact card below instead of its own
+      var el = document.createElement("div");
+      el.className = "cv-block-ro" + (b.id === "contact-block" && photoBlock && photoBlock.dataUrl ? " photo-block-ro" : "");
+      el.id = (b.id === "contact-block" ? "contact-ro" : b.id + "-ro");
+      var body = document.createElement("div");
+      body.className = "body";
+      if (b.kind === "contact") {
+        body.innerHTML = (photoBlock && photoBlock.dataUrl ? '<img class="photo-fill" src="' + photoBlock.dataUrl + '" alt="Photo de profil">' : "") + contactMarkup();
+      } else {
+        body.innerHTML = b.html;
+      }
+      el.appendChild(body);
+      readonlyEl.appendChild(el);
+    });
+  }
+
+  function renderLayers() {
+    layerListEl.innerHTML = "";
+    state.blocks.forEach(function (b) {
+      var row = document.createElement("div");
+      row.className = "layer-row" + (b.id === selectedId ? " active" : "");
+      row.dataset.id = b.id;
+      row.innerHTML = '<span class="name">' + b.name + '</span>';
+      var btn = document.createElement("button");
+      btn.className = "pencil";
+      btn.type = "button";
+      btn.setAttribute("aria-label", "Éditer " + b.name);
+      btn.innerHTML = "&#9998;";
+      row.appendChild(btn);
+      row.addEventListener("click", function () {
+        selectBlock(b.id);
+        var target = document.getElementById(b.id);
+        if (target) target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+      btn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        if (!isDesktop()) return;
+        var target = document.getElementById(b.id);
+        if (!target) return;
+        var body = target.querySelector(".body");
+        var handleBtn = target.querySelector(".edit-btn");
+        toggleEdit(b.id, body, handleBtn);
+        btn.classList.toggle("editing", handleBtn.classList.contains("editing"));
+      });
+      layerListEl.appendChild(row);
+    });
+  }
+
+  /* ---------- ATS score ---------- */
+  function aggregatedText() {
+    var parts = [CONTACT.name, CONTACT.role, CONTACT.email, CONTACT.phone, CONTACT.linkedin, CONTACT.github];
+    state.blocks.forEach(function (b) {
+      if (b.kind !== "contact") {
+        var tmp = document.createElement("div");
+        tmp.innerHTML = b.html;
+        parts.push(tmp.textContent || "");
+      }
+    });
+    return parts.join(" ");
+  }
+
+  function countBullets() {
+    var n = 0;
+    state.blocks.forEach(function (b) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = b.html || "";
+      n += tmp.querySelectorAll("li").length;
+    });
+    return n;
+  }
+
+  function recomputeAts() {
+    var text = aggregatedText();
+    var words = (text.match(/[A-Za-zÀ-ÿ0-9]+/g) || []).length;
+    var checks = [];
+    var score = 0;
+
+    var hasContact = /@/.test(CONTACT.email) && /\d{2}/.test(CONTACT.phone) && /linkedin/i.test(CONTACT.linkedin);
+    checks.push({ ok: hasContact, warn: !hasContact, label: "Coordonnées complètes (email, téléphone, LinkedIn)" });
+    score += hasContact ? 20 : 0;
+
+    var sectionCount = state.blocks.filter(function (b) { return b.kind !== "contact"; }).length;
+    var goodSections = sectionCount >= 5;
+    checks.push({ ok: goodSections, label: sectionCount + " sections avec en-têtes clairs" });
+    score += goodSections ? 15 : Math.round(15 * sectionCount / 5);
+
+    var bullets = countBullets();
+    var goodBullets = bullets >= 6;
+    checks.push({ ok: goodBullets, label: bullets + " puces utilisées (listes d'expérience)" });
+    score += goodBullets ? 15 : Math.round(15 * bullets / 6);
+
+    var quantified = (text.match(/\d/g) || []).length >= 4;
+    checks.push({ ok: quantified, label: "Résultats quantifiés présents (chiffres, dates, %)" });
+    score += quantified ? 15 : 5;
+
+    var goodLength = words >= 200 && words <= 900;
+    checks.push({ ok: goodLength, warn: !goodLength, label: words + " mots — cible 200 à 900 pour une page" });
+    score += goodLength ? 15 : 5;
+
+    var emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text);
+    checks.push({ ok: !emoji, label: emoji ? "Emoji détecté — à éviter pour les parseurs ATS" : "Aucun emoji, texte simple" });
+    score += emoji ? 0 : 10;
+
+    checks.push({ ok: true, label: "Mise en page une colonne (pas de tableau à cellules fusionnées)" });
+    score += 10;
+
+    var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    if (photoBlock && photoBlock.dataUrl) {
+      checks.push({ ok: false, warn: true, label: "Photo intégrée — certains ATS la traitent mal ; à retirer pour une candidature 100 % en ligne" });
+    }
+
+    score = clamp(score, 0, 100);
+    var fill = document.getElementById("ats-fill");
+    var val = document.getElementById("ats-val");
+    val.textContent = score + " / 100";
+    val.className = "val " + (score >= 75 ? "good" : score >= 50 ? "mid" : "low");
+    fill.style.width = score + "%";
+    fill.className = "gauge-fill " + (score >= 75 ? "" : score >= 50 ? "mid" : "low");
+
+    var list = document.getElementById("ats-checks");
+    list.innerHTML = "";
+    checks.forEach(function (c) {
+      var li = document.createElement("li");
+      li.className = c.ok ? "ok" : (c.warn ? "warn" : "");
+      li.innerHTML = '<span class="dot"></span><span>' + c.label + '</span>';
+      list.appendChild(li);
+    });
+  }
+
+  /* ---------- Match score ---------- */
+  var STOPWORDS = new Set([
+    "the","and","for","with","that","this","from","your","you","are","our","will","have","has",
+    "les","des","une","aux","dans","pour","avec","vous","votre","nos","sur","est","sont","par",
+    "poste","mission","profil","entreprise","qui","que","nous","son","ses","leur","leurs","plus",
+    "être","avoir","ainsi","chez","team","role","work","job","offre","offer"
+  ]);
+
+  function tokenize(text) {
+    var raw = (text.toLowerCase().match(/[a-zà-ÿ0-9+#.]{2,}/g) || []);
+    var set = new Set();
+    raw.forEach(function (w) { if (!STOPWORDS.has(w)) set.add(w); });
+    return set;
+  }
+
+  var jobInput = document.getElementById("job-input");
+  var matchTimer = null;
+  jobInput.addEventListener("input", function () {
+    clearTimeout(matchTimer);
+    matchTimer = setTimeout(recomputeMatch, 250);
+  });
+
+  function recomputeMatch() {
+    var jobText = jobInput.value.trim();
+    var fill = document.getElementById("match-fill");
+    var val = document.getElementById("match-val");
+    var empty = document.getElementById("match-empty");
+    var missingWrap = document.getElementById("missing-wrap");
+
+    if (!jobText) {
+      val.textContent = "—";
+      val.className = "val";
+      fill.style.width = "0%";
+      empty.style.display = "block";
+      missingWrap.hidden = true;
+      return;
+    }
+    empty.style.display = "none";
+
+    var jobTokens = tokenize(jobText);
+    var cvTokens = tokenize(aggregatedText());
+    var present = [], missing = [];
+    jobTokens.forEach(function (t) {
+      if (cvTokens.has(t)) present.push(t); else missing.push(t);
+    });
+    var pct = jobTokens.size ? Math.round((present.length / jobTokens.size) * 100) : 0;
+    val.textContent = pct + " %";
+    val.className = "val " + (pct >= 60 ? "good" : pct >= 35 ? "mid" : "low");
+    fill.style.width = pct + "%";
+    fill.className = "gauge-fill " + (pct >= 60 ? "" : pct >= 35 ? "mid" : "low");
+
+    missingWrap.innerHTML = "";
+    if (missing.length) {
+      missing.slice(0, 8).forEach(function (m) {
+        var chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = m;
+        missingWrap.appendChild(chip);
+      });
+      missingWrap.hidden = false;
+    } else {
+      missingWrap.hidden = true;
+    }
+  }
+
+  /* ---------- Responsive mode ---------- */
+  function isDesktop() { return window.matchMedia("(min-width: 880px)").matches; }
+  function applyMode() {
+    document.documentElement.classList.toggle("is-desktop", isDesktop());
+    checkOverflow();
+  }
+  window.addEventListener("resize", applyMode);
+
+  /* ---------- Rail collapse ---------- */
+  var RAIL_KEY = "cv-blueprint-rail-collapsed";
+  function loadRailState() {
+    try { return localStorage.getItem(RAIL_KEY) === "1"; } catch (e) { return false; }
+  }
+  function setRailCollapsed(collapsed) {
+    document.documentElement.classList.toggle("rail-collapsed", collapsed);
+    document.getElementById("rail-toggle").setAttribute("aria-pressed", String(collapsed));
+    document.getElementById("rail-splitter").setAttribute("aria-pressed", String(collapsed));
+    try { localStorage.setItem(RAIL_KEY, collapsed ? "1" : "0"); } catch (e) {}
+  }
+  function toggleRail() {
+    setRailCollapsed(!document.documentElement.classList.contains("rail-collapsed"));
+  }
+  document.getElementById("rail-toggle").addEventListener("click", toggleRail);
+  var splitterEl = document.getElementById("rail-splitter");
+  splitterEl.addEventListener("click", toggleRail);
+  splitterEl.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggleRail(); }
+  });
+
+  /* ---------- Toast ---------- */
+  var toastTimer = null;
+  function showToast(msg) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove("show"); }, 2600);
+  }
+
+  function copyToClipboard(text, successMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand("copy"); showToast(successMsg); }
+      catch (e) { showToast("Copie impossible ici — sélectionnez le texte manuellement."); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { showToast(successMsg); }).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function downloadFile(filename, content, mime) {
+    var blob = new Blob([content], { type: mime + ";charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* ---------- Export: DOM → LaTeX / plain text ---------- */
+  function escapeLatex(s) {
+    return s
+      .replace(/\\/g, "\\textbackslash{}")
+      .replace(/([&%$#_{}])/g, "\\$1")
+      .replace(/~/g, "\\textasciitilde{}")
+      .replace(/\^/g, "\\textasciicircum{}");
+  }
+
+  function domToLatex(node) {
+    if (node.nodeType === Node.TEXT_NODE) return escapeLatex(node.textContent);
+    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+    var tag = node.tagName;
+    var inner = Array.prototype.map.call(node.childNodes, domToLatex).join("");
+    switch (tag) {
+      case "STRONG": case "B": return "\\textbf{" + inner + "}";
+      case "EM": case "I": return "\\textit{" + inner + "}";
+      case "H3": return ""; // block heading is emitted separately from block.name
+      case "UL": return "\\begin{itemize}\n" + inner + "\\end{itemize}\n";
+      case "LI": return "  \\item " + inner.trim() + "\n";
+      case "BR": return "\\\\\n";
+      case "P": case "DIV": return inner.trim() ? inner.trim() + "\n\n" : "";
+      default: return inner;
+    }
+  }
+
+  function blockLatexBody(b) {
+    var tmp = document.createElement("div");
+    tmp.innerHTML = b.html || "";
+    return Array.prototype.map.call(tmp.childNodes, domToLatex).join("").trim();
+  }
+
+  function orderedContentBlocks() {
+    return state.blocks
+      .filter(function (b) { return b.kind !== "photo"; })
+      .slice()
+      .sort(function (a, c) { return a.row - c.row || a.col - c.col; });
+  }
+
+  function generateLatex() {
+    var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    var lines = [];
+    lines.push("% Généré depuis l'éditeur CV Blueprint — brouillon à revoir avant compilation.");
+    lines.push("\\documentclass[11pt]{article}");
+    lines.push("\\usepackage[a4paper,margin=2cm]{geometry}");
+    lines.push("\\usepackage[utf8]{inputenc}");
+    lines.push("\\usepackage[T1]{fontenc}");
+    lines.push("\\usepackage{enumitem}");
+    lines.push("\\usepackage[hidelinks]{hyperref}");
+    lines.push("\\pagestyle{empty}");
+    lines.push("\\setlist[itemize]{leftmargin=1.4em,itemsep=1pt,topsep=2pt}");
+    lines.push("\\begin{document}");
+    if (photoBlock && photoBlock.dataUrl) {
+      lines.push("% Photo ajoutée dans l'outil — réinsérez-la manuellement, par ex. :");
+      lines.push("% \\includegraphics[width=2.2cm]{photo.jpg}");
+    }
+    lines.push("\\begin{center}");
+    lines.push("{\\LARGE \\textbf{" + escapeLatex(CONTACT.name) + "}}\\\\[2pt]");
+    lines.push("{\\small " + escapeLatex(CONTACT.role) + "}\\\\[2pt]");
+    lines.push("{\\small " + escapeLatex(CONTACT.email) + " ~--~ " + escapeLatex(CONTACT.phone) + " ~--~ " +
+      escapeLatex(CONTACT.linkedin) + " ~--~ " + escapeLatex(CONTACT.github) + "}");
+    lines.push("\\end{center}");
+    lines.push("\\vspace{6pt}");
+    orderedContentBlocks().forEach(function (b) {
+      lines.push("\\section*{" + escapeLatex(b.name) + "}");
+      lines.push(blockLatexBody(b));
+      lines.push("");
+    });
+    lines.push("\\end{document}");
+    return lines.join("\n");
+  }
+
+  function generatePlainText() {
+    var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    var lines = [];
+    lines.push(CONTACT.name);
+    lines.push(CONTACT.role);
+    lines.push(CONTACT.email + " · " + CONTACT.phone + " · " + CONTACT.linkedin + " · " + CONTACT.github);
+    if (photoBlock && photoBlock.dataUrl) lines.push("[Photo — non incluse dans cet export texte]");
+    lines.push("");
+    orderedContentBlocks().forEach(function (b) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = b.html || "";
+      lines.push(b.name.toUpperCase());
+      lines.push((tmp.textContent || "").replace(/\s+/g, " ").trim());
+      lines.push("");
+    });
+    return lines.join("\n");
+  }
+
+  document.getElementById("export-pdf-btn").addEventListener("click", function () {
+    window.print();
+  });
+  document.getElementById("export-tex-download-btn").addEventListener("click", function () {
+    downloadFile("cv_lionel_payet.tex", generateLatex(), "text/x-tex");
+    showToast(".tex téléchargé");
+  });
+  document.getElementById("export-tex-copy-btn").addEventListener("click", function () {
+    copyToClipboard(generateLatex(), ".tex copié dans le presse-papiers");
+  });
+  document.getElementById("export-txt-btn").addEventListener("click", function () {
+    copyToClipboard(generatePlainText(), "Texte copié dans le presse-papiers");
+  });
+
+  /* ---------- Reset ---------- */
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    state.blocks = DEFAULT_BLOCKS.map(function (b) { return Object.assign({}, b); });
+    state.revisions = 0;
+    document.getElementById("rev-count").textContent = "0";
+    jobInput.value = "";
+    selectedId = null;
+    renderAll();
+  });
+
+  function renderAll() {
+    renderCanvas();
+    renderReadonly();
+    renderLayers();
+    recomputeAts();
+    recomputeMatch();
+  }
+
+  loadState();
+  applyMode();
+  setRailCollapsed(loadRailState());
+  document.getElementById("rev-count").textContent = state.revisions;
+  renderAll();
+})();
+</script>
+</body>
+</html>
