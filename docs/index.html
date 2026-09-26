@@ -240,6 +240,8 @@
   }
 
   .organize-btn { width: 100%; margin-bottom: 8px; }
+  html:not(.is-desktop) .organize-btn.desktop-only { display: none; }
+  html:not(.is-desktop) .organize-hint.desktop-only { display: none; }
 
   /* ---------- Layer panel ---------- */
   .layer-row {
@@ -629,8 +631,8 @@
 
       <div class="panel">
         <h2>Blocs <span class="n" id="block-count">(9)</span></h2>
-        <button class="ghost organize-btn" id="organize-btn" type="button">Organiser (ajuster taille &amp; police)</button>
-        <p class="export-hint">Ajuste la hauteur et la taille de police de chaque bloc de texte à son contenu, puis réorganise les blocs sans chevauchement. Contact et photo ne sont pas modifiés.</p>
+        <button class="ghost organize-btn desktop-only" id="organize-btn" type="button">Organiser (ajuster taille &amp; police)</button>
+        <p class="export-hint organize-hint desktop-only">Ajuste la hauteur et la taille de police de chaque bloc de texte à son contenu, puis réorganise les blocs sans chevauchement. Contact et photo ne sont pas modifiés.</p>
         <div id="layer-list"></div>
       </div>
 
@@ -1151,7 +1153,15 @@
     checkOverflow();
     recomputeAts();
     recomputeMatch();
-    showToast("Blocs organisés : taille et police ajustées à leur contenu.");
+
+    var stillOverlapping = state.blocks.some(function (b, i) {
+      return state.blocks.slice(i + 1).some(function (other) { return rectsOverlap(b, other); });
+    });
+    if (stillOverlapping) {
+      showToast("Blocs organisés, mais certains se chevauchent encore — ajustez-les manuellement.");
+    } else {
+      showToast("Blocs organisés : taille et police ajustées à leur contenu.");
+    }
   }
 
   function checkOverflow() {
