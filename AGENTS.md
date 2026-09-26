@@ -48,6 +48,13 @@ on-demand only (button click, not live-on-edit) and skips contact/photo
 blocks. See `organizeBlocks()` in `docs/index.html` for the tuning constants
 (min/max font size, padding, row floor).
 
+Re-packing multiple blocks at once isn't guaranteed collision-free (the
+per-block row clamp can still leave a residual overlap), so
+`organizeBlocks()` checks every block pair with `rectsOverlap()` afterward
+and swaps in a warning toast instead of the success toast when one remains —
+keep that check if you touch the function. The button and its hint are
+`desktop-only`, matching the other desktop-only editing affordances.
+
 ## LaTeX export
 
 `.tex` export is a real file download (`Blob` + `<a download>`), with a

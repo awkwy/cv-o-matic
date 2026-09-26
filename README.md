@@ -1,7 +1,9 @@
 # CV·O·Matic
 
 **CV Blueprint** — a block-based CV editor with an engineering-blueprint visual
-theme (Tornado Cash green, IBM Plex Mono/Sans), built for job-hunting.
+theme (Tornado Cash green, IBM Plex Mono/Sans) for the editor UI, built for
+job-hunting. The printed CV document itself renders in a separate,
+professional type pair (Source Sans 3 / Source Serif 4).
 
 It renders your CV as draggable, resizable blocks laid out on an A4-ratio
 page, with:
@@ -17,6 +19,8 @@ page, with:
   still there.
 - Desktop-only editing, with a read-only stacked fallback view on narrow
   screens.
+- An on-demand "Organiser" action that auto-fits each text block's size and
+  font to its content, then re-packs the layout.
 - An Overleaf-style collapsible side panel.
 - Export to a clean one-page A4 PDF (via the browser's print dialog) and to
   a `.tex` file (downloadable, with copy-to-clipboard as a fallback).
