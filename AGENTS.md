@@ -62,6 +62,19 @@ clipboard-copy button kept as a fallback. Both call the same
 `generateLatex()` DOM-walking generator in `docs/index.html` — don't let the
 two paths drift into separate generators.
 
+## Sidebar layout: `.rail` leaving the grid
+
+`.layout` is a 3-column CSS Grid (`.rail` / `.splitter` / `.canvas-wrap`).
+`html.rail-collapsed .rail { display: none }` removes `.rail` from grid
+auto-placement entirely, so `.splitter`/`.canvas-wrap` need an explicit
+`grid-column` (see the `@media (min-width: 880px)` rule right after
+`html.rail-collapsed .layout`) or they silently shift into the wrong tracks
+when the rail collapses. If you touch `.layout`'s columns or the
+rail-collapse toggle, re-check that rule and its `@media print` override,
+and verify by actually clicking `#rail-toggle` in a live/headless browser —
+this class of bug doesn't show up in a static screenshot of either steady
+state.
+
 ## Deployment
 
 Public repo, GitHub Pages serving `/docs` on `main`. Being public is what
