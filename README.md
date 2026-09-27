@@ -2,12 +2,16 @@
 
 **CV Blueprint** — a block-based CV editor with an engineering-blueprint visual
 theme (Tornado Cash green, IBM Plex Mono/Sans) for the editor UI, built for
-job-hunting. The printed CV document itself renders in a separate,
-professional type pair (Source Sans 3 / Source Serif 4).
+job-hunting. The editor chrome always keeps this look; the printed CV
+document itself renders in a separate, switchable CV template — "Blueprint"
+(Source Sans 3 / Source Serif 4, the default) or "Classique", a
+Jake's-Resume-styled skin with right-aligned dates.
 
 It renders your CV as draggable, resizable blocks laid out on an A4-ratio
 page, with:
 
+- A CV template switcher ("Blueprint" / "Classique") that restyles the
+  printed document only, leaving the editor UI untouched.
 - Drag-and-resize block layout with automatic collision avoidance, so blocks
   never overlap and stay inside the printable page.
 - Inline `contenteditable` text editing per block.

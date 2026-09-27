@@ -29,6 +29,56 @@
     --cv-body: "Source Sans 3", "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
     --cv-display: "Source Serif 4", Georgia, "Times New Roman", serif;
     color-scheme: dark;
+
+    /* ---- CV template tokens ("Blueprint" defaults) ----
+       These decouple the printed/exported CV page from the tool's own
+       --ink/--accent/--bg-panel* chrome tokens, so a template switch never
+       touches the rail, buttons or score panels (see html[data-template]
+       below for the "Classique" overrides). */
+    --cv-page-bg: var(--bg-panel);
+    --cv-page-border: var(--critical);
+    --cv-page-shadow: 0 0 0 1px var(--bg), 0 0 16px rgba(255, 107, 107, 0.25), 0 8px 28px rgba(0,0,0,.5);
+    --cv-page-grid-minor: var(--line-minor);
+    --cv-page-grid-major: var(--line-major);
+    --cv-block-bg: var(--bg-panel-2);
+    --cv-block-border: var(--border-strong);
+    --cv-block-ink: var(--ink);
+    --cv-block-ink-dim: var(--ink-dim);
+    --cv-heading-color: var(--accent);
+    --cv-heading-caps: normal;
+    --cv-heading-letter-spacing: 0.01em;
+    --cv-heading-rule: none;
+    --cv-emphasis-color: var(--accent);
+    --cv-handle-bg: #0a1e14;
+    --cv-handle-border: var(--border);
+    --cv-handle-ink: var(--ink-faint);
+  }
+
+  /* "Classique" — Jake's-Resume-family skin: white/off-white page, black ink,
+     small-caps section titles with a rule beneath, single serif face distinct
+     from Blueprint's Source Sans/Serif pairing. Applies to the CV document
+     content only (blocks, canvas page, contact card) — rail/buttons/panels
+     read --ink/--accent/--bg-panel* directly and are untouched by this rule. */
+  html[data-template="classique"] {
+    --cv-body: Georgia, "Times New Roman", "Liberation Serif", serif;
+    --cv-display: Georgia, "Times New Roman", "Liberation Serif", serif;
+    --cv-page-bg: #fbfaf7;
+    --cv-page-border: #ddd8ca;
+    --cv-page-shadow: 0 1px 2px rgba(0,0,0,.10), 0 10px 26px rgba(0,0,0,.16);
+    --cv-page-grid-minor: transparent;
+    --cv-page-grid-major: transparent;
+    --cv-block-bg: #ffffff;
+    --cv-block-border: #e6e2d4;
+    --cv-block-ink: #1a1a1a;
+    --cv-block-ink-dim: #4a4a4a;
+    --cv-heading-color: #16233b;
+    --cv-heading-caps: small-caps;
+    --cv-heading-letter-spacing: 0.04em;
+    --cv-heading-rule: 1px solid #16233b;
+    --cv-emphasis-color: #1a1a1a;
+    --cv-handle-bg: #efece2;
+    --cv-handle-border: #ddd8ca;
+    --cv-handle-ink: #6b6558;
   }
 
   * { box-sizing: border-box; }
@@ -246,6 +296,29 @@
     padding: 3px 6px;
   }
 
+  /* ---------- Template switch (rail chrome — stays Blueprint-styled
+     regardless of which CV template is selected; only the canvas/print
+     content below reads the --cv-* tokens). ---------- */
+  .template-switch { display: flex; gap: 6px; }
+  .template-opt {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 7px 8px;
+    cursor: pointer;
+  }
+  .template-opt:hover { color: var(--accent); border-color: var(--accent-dim); }
+  .template-opt.active {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
   .organize-btn { width: 100%; margin-bottom: 8px; }
   html:not(.is-desktop) .organize-btn.desktop-only { display: none; }
   html:not(.is-desktop) .organize-hint.desktop-only { display: none; }
@@ -338,15 +411,15 @@
     position: relative;
     width: 100%;
     aspect-ratio: 794 / 1123;
-    background-color: var(--bg-panel);
-    border: 2px solid var(--critical);
+    background-color: var(--cv-page-bg);
+    border: 2px solid var(--cv-page-border);
     border-radius: 4px;
-    box-shadow: 0 0 0 1px var(--bg), 0 0 16px rgba(255, 107, 107, 0.25), 0 8px 28px rgba(0,0,0,.5);
+    box-shadow: var(--cv-page-shadow);
     background-image:
-      linear-gradient(var(--line-minor) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line-minor) 1px, transparent 1px),
-      linear-gradient(var(--line-major) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line-major) 1px, transparent 1px);
+      linear-gradient(var(--cv-page-grid-minor) 1px, transparent 1px),
+      linear-gradient(90deg, var(--cv-page-grid-minor) 1px, transparent 1px),
+      linear-gradient(var(--cv-page-grid-major) 1px, transparent 1px),
+      linear-gradient(90deg, var(--cv-page-grid-major) 1px, transparent 1px);
     background-size:
       calc(100% / 12) calc(100% / 32),
       calc(100% / 12) calc(100% / 32),
@@ -362,8 +435,8 @@
 
   .cv-block {
     position: relative;
-    background: var(--bg-panel-2);
-    border: 1px solid var(--border-strong);
+    background: var(--cv-block-bg);
+    border: 1px solid var(--cv-block-border);
     border-radius: 3px;
     display: flex;
     flex-direction: column;
@@ -377,9 +450,9 @@
     font-family: var(--mono);
     font-size: 9.5px;
     letter-spacing: 0.08em;
-    color: var(--ink-faint);
-    background: #0a1e14;
-    border-bottom: 1px solid var(--border);
+    color: var(--cv-handle-ink);
+    background: var(--cv-handle-bg);
+    border-bottom: 1px solid var(--cv-handle-border);
     padding: 4px 7px;
     cursor: grab;
     display: flex;
@@ -411,16 +484,42 @@
     font-family: var(--cv-body);
     font-size: 11.5px;
     line-height: 1.42;
-    color: var(--ink);
+    color: var(--cv-block-ink);
   }
   .cv-block .body[contenteditable="true"] {
     outline: 1px dashed var(--accent-dim);
     outline-offset: -1px;
     cursor: text;
   }
-  .cv-block .body h3 { font-family: var(--cv-display); font-size: 1.13em; font-weight: 700; color: var(--accent); margin-bottom: 3px; letter-spacing: 0.01em; }
-  .cv-block .body .role { font-weight: 600; color: var(--ink); }
-  .cv-block .body .meta { font-family: var(--cv-body); font-size: 0.87em; color: var(--ink-dim); margin-bottom: 4px; }
+  /* Classique's meta-date split (see applyMetaTabularSplit() in the script)
+     must never touch the contenteditable .body node itself, or blurring it
+     bakes the split spans into b.html permanently. Instead a separate,
+     never-editable .body-display sibling carries the split markup, shown via
+     this attribute selector. The blur handler resets contenteditable back to
+     "false" as soon as focus leaves (see renderCanvas()), so this reflects
+     genuinely-being-edited, not "was edited at some point" — a stale "true"
+     left over from a prior edit session would otherwise hide the date split
+     on print/export for that block. */
+  .cv-block .body-display { display: none; }
+  html[data-template="classique"] .cv-block .body:not([contenteditable="true"]) {
+    display: none;
+  }
+  html[data-template="classique"] .cv-block .body:not([contenteditable="true"]) ~ .body-display {
+    display: block;
+  }
+  .cv-block .body h3 {
+    font-family: var(--cv-display);
+    font-size: 1.13em;
+    font-weight: 700;
+    color: var(--cv-heading-color);
+    margin-bottom: 3px;
+    letter-spacing: var(--cv-heading-letter-spacing);
+    font-variant-caps: var(--cv-heading-caps);
+    border-bottom: var(--cv-heading-rule);
+    padding-bottom: 2px;
+  }
+  .cv-block .body .role { font-weight: 600; color: var(--cv-block-ink); }
+  .cv-block .body .meta { font-family: var(--cv-body); font-size: 0.87em; color: var(--cv-block-ink-dim); margin-bottom: 4px; }
   .cv-block .body ul { margin: 4px 0 0 16px; padding: 0; }
   .cv-block .body li { margin-bottom: 3px; }
   .cv-block .body p { margin: 0 0 6px; }
@@ -445,8 +544,27 @@
     -ms-hyphens: auto;
     hyphenate-limit-chars: 6 3 3;
   }
-  .cv-block .body strong { color: var(--accent); font-weight: 600; }
-  .cv-block .body .skill-cat { font-weight: 600; color: var(--ink); }
+  .cv-block .body strong { color: var(--cv-emphasis-color); font-weight: 600; }
+  .cv-block .body .skill-cat { font-weight: 600; color: var(--cv-block-ink); }
+
+  /* Classique only: split a ".meta" line's trailing date (see
+     splitMetaTabular() in the script) into a right-aligned tabular column,
+     mirroring the Jake's-Resume \resumeSubheading layout. A ".meta" that
+     wasn't split (no recognizable date) still renders fine as a single
+     flex item — no visual regression. */
+  html[data-template="classique"] .cv-block .body .meta,
+  html[data-template="classique"] .readonly-list .cv-block-ro .body .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-style: italic;
+  }
+  .cv-block .body .meta .meta-right,
+  .readonly-list .cv-block-ro .body .meta .meta-right {
+    flex: none;
+    white-space: nowrap;
+  }
 
   .cv-block .resize {
     position: absolute; right: 0; bottom: 0;
@@ -462,9 +580,9 @@
   .cv-block.selected .resize::after { border-color: var(--accent); }
 
   #contact-block .body { display: flex; flex-direction: column; justify-content: center; gap: 3px; }
-  #contact-block .name { font-family: var(--cv-display); font-size: 19px; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
-  #contact-block .role { font-family: var(--cv-body); font-size: 10.5px; color: var(--accent); letter-spacing: 0.02em; }
-  #contact-block .contact-line { font-family: var(--cv-body); font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
+  #contact-block .name { font-family: var(--cv-display); font-size: 19px; font-weight: 700; color: var(--cv-block-ink); letter-spacing: 0.01em; }
+  #contact-block .role { font-family: var(--cv-body); font-size: 10.5px; color: var(--cv-heading-color); letter-spacing: 0.02em; }
+  #contact-block .contact-line { font-family: var(--cv-body); font-size: 10px; color: var(--cv-block-ink-dim); margin-top: 3px; }
 
   /* ---------- Photo block ---------- */
   .photo-block .body { padding: 0; display: flex; overflow: hidden; }
@@ -603,19 +721,28 @@
   .readonly-list { display: none; flex-direction: column; gap: 12px; }
   html:not(.is-desktop) .readonly-list { display: flex; }
   .readonly-list .cv-block-ro {
-    background: var(--bg-panel-2);
-    border: 1px solid var(--border-strong);
+    background: var(--cv-block-bg);
+    border: 1px solid var(--cv-block-border);
     border-radius: 4px;
     padding: 12px 14px;
   }
-  .readonly-list .cv-block-ro .body { font-family: var(--cv-body); font-size: 12.5px; line-height: 1.5; color: var(--ink); }
-  .readonly-list .cv-block-ro .body h3 { font-family: var(--cv-display); font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+  .readonly-list .cv-block-ro .body { font-family: var(--cv-body); font-size: 12.5px; line-height: 1.5; color: var(--cv-block-ink); }
+  .readonly-list .cv-block-ro .body h3 {
+    font-family: var(--cv-display);
+    font-size: 14px;
+    color: var(--cv-heading-color);
+    margin-bottom: 4px;
+    letter-spacing: var(--cv-heading-letter-spacing);
+    font-variant-caps: var(--cv-heading-caps);
+    border-bottom: var(--cv-heading-rule);
+    padding-bottom: 2px;
+  }
   .readonly-list .cv-block-ro .body ul { margin: 4px 0 0 18px; padding: 0; }
   .readonly-list .cv-block-ro .body li { margin-bottom: 4px; }
-  .readonly-list .cv-block-ro .body strong { color: var(--accent); }
-  .readonly-list #contact-ro .name { font-family: var(--cv-display); font-size: 20px; font-weight: 700; }
-  .readonly-list #contact-ro .role { font-family: var(--cv-body); font-size: 11px; color: var(--accent); }
-  .readonly-list #contact-ro .contact-line { font-family: var(--cv-body); font-size: 10.5px; color: var(--ink-dim); margin-top: 4px; }
+  .readonly-list .cv-block-ro .body strong { color: var(--cv-emphasis-color); }
+  .readonly-list #contact-ro .name { font-family: var(--cv-display); font-size: 20px; font-weight: 700; color: var(--cv-block-ink); }
+  .readonly-list #contact-ro .role { font-family: var(--cv-body); font-size: 11px; color: var(--cv-heading-color); }
+  .readonly-list #contact-ro .contact-line { font-family: var(--cv-body); font-size: 10.5px; color: var(--cv-block-ink-dim); margin-top: 4px; }
 
   /* ---------- Title block strip ---------- */
   .titleblock {
@@ -688,7 +815,7 @@
        oversized text intrude on a neighboring block even though the blocks'
        own boxes (via resolveCollisions) never overlap. The on-screen editor's
        overflow banner is the mechanism for catching this before export. */
-    .cv-block .body { overflow: hidden !important; color: #141414 !important; }
+    .cv-block .body { overflow: hidden !important; color: var(--cv-block-ink) !important; }
     .cv-block .body[contenteditable] { outline: none !important; cursor: default !important; }
     .photo-block .photo-upload-btn, .photo-block .photo-empty, .photo-block .photo-toolbar,
     .photo-block .photo-delete-btn, .crop-overlay { display: none !important; }
@@ -719,6 +846,15 @@
   <div class="layout">
     <!-- Left rail -->
     <div class="rail">
+      <div class="panel">
+        <h2>Modèle de CV</h2>
+        <div class="template-switch" id="template-switch" role="group" aria-label="Modèle de CV">
+          <button class="template-opt" type="button" data-template="blueprint">Blueprint</button>
+          <button class="template-opt" type="button" data-template="classique">Classique</button>
+        </div>
+        <p class="export-hint">Change l'apparence du CV imprimé/exporté (police, couleurs, en-têtes). Les panneaux de l'éditeur restent inchangés.</p>
+      </div>
+
       <div class="panel">
         <h2>Score ATS</h2>
         <div class="gauge">
@@ -907,7 +1043,8 @@
   };
 
   var STORAGE_KEY = "cv-blueprint-draft-v1";
-  var state = { blocks: null, revisions: 0 };
+  var TEMPLATES = ["blueprint", "classique"];
+  var state = { blocks: null, revisions: 0, template: "blueprint" };
 
   function loadState() {
     try {
@@ -917,6 +1054,9 @@
         if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length === DEFAULT_BLOCKS.length) {
           state.blocks = parsed.blocks;
           state.revisions = parsed.revisions || 0;
+          // First-time visitor or a draft saved before templates existed has
+          // no `template` field — default to "blueprint" (today's look).
+          state.template = TEMPLATES.indexOf(parsed.template) !== -1 ? parsed.template : "blueprint";
           // Saved draft from before the photo toggle existed has no `enabled`
           // field — default it to true so existing photos keep showing.
           state.blocks.forEach(function (b) {
@@ -928,6 +1068,7 @@
     } catch (e) { /* private mode or blocked storage: fall through to defaults */ }
     state.blocks = DEFAULT_BLOCKS.map(function (b) { return Object.assign({}, b); });
     state.revisions = 0;
+    state.template = "blueprint";
   }
 
   function saveState() {
@@ -954,6 +1095,61 @@
   var readonlyEl = document.getElementById("readonly-list");
   var layerListEl = document.getElementById("layer-list");
   var selectedId = null;
+
+  /* ---------- CV template switch ---------- */
+  function syncTemplateUI(name) {
+    document.documentElement.setAttribute("data-template", name);
+    document.querySelectorAll(".template-opt").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.template === name);
+    });
+  }
+
+  function setTemplate(name) {
+    if (TEMPLATES.indexOf(name) === -1) name = "blueprint";
+    if (state.template === name) return;
+    state.template = name;
+    syncTemplateUI(name);
+    saveState();
+    renderAll();
+  }
+
+  document.querySelectorAll(".template-opt").forEach(function (btn) {
+    btn.addEventListener("click", function () { setTemplate(btn.dataset.template); });
+  });
+
+  // Classique only: a ".meta" line like "Institution · 05/2025 – 09/2025" or
+  // "Institution — obtenu 09/2025" gets its trailing date pulled into a
+  // right-aligned column (see the .meta-right CSS), mirroring the Jake's-
+  // Resume \resumeSubheading tabular layout — purely a render-time DOM split,
+  // never touches b.html/aggregatedText()/generateLatex(), so exports and
+  // the ATS/match text are unaffected. Falls back to plain text when no
+  // trailing date is recognized (nothing to split, no crash).
+  var META_DATE_RE = /[\s]*[·•∙\-–—|]\s*((?:obtenu\s+)?(?:\d{1,2}\/)?\d{4}(?:\s*[–\-]\s*(?:(?:\d{1,2}\/)?\d{4}|présent|present|aujourd'hui))?)\s*$/i;
+
+  function splitMetaTabular(text) {
+    var m = META_DATE_RE.exec(text);
+    if (!m) return null;
+    var left = text.slice(0, m.index).trim();
+    var right = m[1].trim();
+    if (!left || !right) return null;
+    return { left: left, right: right };
+  }
+
+  function applyMetaTabularSplit(container) {
+    container.querySelectorAll(".meta").forEach(function (el) {
+      var split = splitMetaTabular(el.textContent);
+      if (!split) return;
+      el.innerHTML = "";
+      var left = document.createElement("span");
+      left.className = "meta-left";
+      left.textContent = split.left;
+      var right = document.createElement("span");
+      right.className = "meta-right";
+      right.textContent = split.right;
+      el.appendChild(left);
+      el.appendChild(right);
+    });
+  }
 
   function contactMarkup(scale) {
     return (
@@ -990,13 +1186,25 @@
 
       var body = document.createElement("div");
       body.className = "body";
+      var bodyDisplay = null;
       if (b.kind === "contact") body.innerHTML = contactMarkup();
       else if (b.kind === "photo") body.appendChild(photoBodyMarkup(b));
       else {
         body.innerHTML = b.html;
         body.style.fontSize = (b.fontSize || DEFAULT_BODY_FONT_SIZE) + "px";
+        if (state.template === "classique") {
+          // Never-editable sibling: carries the meta-date split so the
+          // contenteditable body above is never mutated by it (see the
+          // .body-display CSS comment for why this can't be one element).
+          bodyDisplay = document.createElement("div");
+          bodyDisplay.className = "body body-display";
+          bodyDisplay.innerHTML = b.html;
+          bodyDisplay.style.fontSize = body.style.fontSize;
+          applyMetaTabularSplit(bodyDisplay);
+        }
       }
       el.appendChild(body);
+      if (bodyDisplay) el.appendChild(bodyDisplay);
 
       var resize = document.createElement("div");
       resize.className = "resize";
@@ -1015,7 +1223,14 @@
       }
       el.addEventListener("pointerdown", function () { selectBlock(b.id); });
       body.addEventListener("blur", function () {
-        if (b.kind !== "contact" && b.kind !== "photo") b.html = body.innerHTML;
+        if (b.kind !== "contact" && b.kind !== "photo") {
+          b.html = body.innerHTML;
+          if (bodyDisplay) {
+            bodyDisplay.innerHTML = b.html;
+            applyMetaTabularSplit(bodyDisplay);
+          }
+        }
+        if (editBtn) closeEdit(body, editBtn);
         saveState();
       });
     });
@@ -1257,12 +1472,19 @@
     });
   }
 
+  function closeEdit(body, btn) {
+    body.setAttribute("contenteditable", "false");
+    if (btn) btn.classList.remove("editing");
+    recomputeAts();
+    checkOverflow();
+  }
+
   function toggleEdit(id, body, btn) {
     var editing = body.getAttribute("contenteditable") === "true";
-    body.setAttribute("contenteditable", editing ? "false" : "true");
-    btn.classList.toggle("editing", !editing);
-    if (!editing) { body.focus(); }
-    else { recomputeAts(); checkOverflow(); }
+    if (editing) { closeEdit(body, btn); return; }
+    body.setAttribute("contenteditable", "true");
+    btn.classList.add("editing");
+    body.focus();
   }
 
   function selectBlock(id) {
@@ -1405,6 +1627,18 @@
   // its font-size to use that box evenly (shrink to fit / grow to fill), then
   // re-packs with the same collision resolution manual drag/resize already use.
   // Contact and photo blocks are left exactly as the user sized them.
+  // Classique keeps two ".body" elements per text block (see the
+  // .body-display CSS comment) and only one is ever actually laid out at a
+  // time — scrollHeight/clientHeight on the display:none one always read 0,
+  // so measurement must target whichever one is currently rendered.
+  function visibleBodyEl(el) {
+    var bodies = el.querySelectorAll(".body");
+    for (var i = 0; i < bodies.length; i++) {
+      if (bodies[i].offsetParent !== null) return bodies[i];
+    }
+    return bodies[0];
+  }
+
   function organizeBlocks() {
     if (!isDesktop()) return;
     var cellH = canvasEl.getBoundingClientRect().height / GRID_ROWS;
@@ -1414,7 +1648,7 @@
       if (b.kind !== "text") return;
       var el = document.getElementById(b.id);
       if (!el) return;
-      var body = el.querySelector(".body");
+      var body = visibleBodyEl(el);
       var handle = el.querySelector(".handle");
       var handleH = handle ? handle.getBoundingClientRect().height : 0;
 
@@ -1454,7 +1688,7 @@
         }
       }
       b.fontSize = fs;
-      body.style.fontSize = fs + "px";
+      el.querySelectorAll(".body").forEach(function (bd) { bd.style.fontSize = fs + "px"; });
     });
 
     // 3) Re-pack with the exact same collision logic manual drag/resize use —
@@ -1483,7 +1717,7 @@
     state.blocks.forEach(function (b) {
       var el = document.getElementById(b.id);
       if (!el) return;
-      var body = el.querySelector(".body");
+      var body = visibleBodyEl(el);
       var over = body.scrollHeight > body.clientHeight + 1;
       el.classList.toggle("overflow", over);
       if (over) anyOverflow = true;
@@ -1513,6 +1747,7 @@
         body.innerHTML = (showPhoto ? '<img class="photo-fill" src="' + photoBlock.dataUrl + '" alt="Photo de profil">' : "") + contactMarkup();
       } else {
         body.innerHTML = b.html;
+        if (state.template === "classique") applyMetaTabularSplit(body);
       }
       el.appendChild(body);
       readonlyEl.appendChild(el);
@@ -1894,6 +2129,8 @@
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     state.blocks = DEFAULT_BLOCKS.map(function (b) { return Object.assign({}, b); });
     state.revisions = 0;
+    state.template = "blueprint";
+    syncTemplateUI(state.template);
     document.getElementById("rev-count").textContent = "0";
     jobInput.value = "";
     selectedId = null;
@@ -1909,6 +2146,7 @@
   }
 
   loadState();
+  syncTemplateUI(state.template);
   applyMode();
   setRailCollapsed(loadRailState());
   document.getElementById("rev-count").textContent = state.revisions;
