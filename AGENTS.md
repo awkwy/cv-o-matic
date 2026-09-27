@@ -62,6 +62,40 @@ Each text block can carry a per-block `fontSize` (px) set by the Organiser
 action (see below); `h3`/`.meta` sizes inside `.cv-block .body` are in `em`
 so they scale with it. Contact and photo blocks don't use `fontSize`.
 
+## CV template switch
+
+The rail's "Modèle de CV" panel (top of the rail) picks between "Blueprint"
+(default) and "Classique" (a Jake's-Resume-family skin: off-white page, black
+ink, small-caps section titles with a rule beneath, single serif face,
+right-aligned dates on Formation/Expérience), stored as `state.template` in
+the same `cv-blueprint-draft-v1` draft and normalized to `"blueprint"` on
+load if absent/unrecognized (old drafts, first-time visitors). The switch
+only repaints the CV document content (canvas page, `.cv-block`, contact
+card, print output) via a dedicated `--cv-*` token set defined at `:root`
+(Blueprint values) and overridden under `html[data-template="classique"]` —
+see the "CV template tokens" comment block in `docs/index.html`'s `<style>`.
+These tokens are deliberately separate from the tool chrome's own
+`--ink`/`--accent`/`--bg-panel*` (rail, buttons, gauges), so a template
+switch never touches the editor UI, only the parts of the DOM that actually
+print. `--cv-body`/`--cv-display` (already CV-content-only, see Typography
+above) are likewise overridden per template.
+
+Adding a third template means: add its token block under a new
+`html[data-template="..."]` selector, add a button to `.template-switch`,
+and add its name to the `TEMPLATES` array in `docs/index.html` — no changes
+needed to `resolveCollisions`/`organizeBlocks`/export, which are
+template-agnostic by construction (they measure/manipulate whatever CSS is
+currently active). A template needing a genuinely different layout (e.g. a
+fixed sidebar zone, not just new colors/fonts) is a bigger change than this
+mechanism supports — see the deferred "Minimal Academic" sidebar family.
+
+Classique also right-aligns a `.meta` line's trailing date into a tabular
+column via `splitMetaTabular()`/`applyMetaTabularSplit()` in
+`docs/index.html` — a render-time-only DOM split (regex-matched against the
+existing text, never rewrites `b.html`) that falls back to plain text when
+no date pattern is recognized. It never touches `aggregatedText()`,
+`generateLatex()`, or the ATS/match scoring text.
+
 ## Organiser action
 
 The "Organiser" button (rail, Blocs panel) auto-fits each text block's
