@@ -94,7 +94,11 @@ column via `splitMetaTabular()`/`applyMetaTabularSplit()` in
 `docs/index.html` — a render-time-only DOM split (regex-matched against the
 existing text, never rewrites `b.html`) that falls back to plain text when
 no date pattern is recognized. It never touches `aggregatedText()`,
-`generateLatex()`, or the ATS/match scoring text.
+`generateLatex()`, or the ATS/match scoring text. The split markup lives on
+a separate, never-editable `.body-display` sibling rather than inside the
+contenteditable `.body` node itself — see the "Classique's meta-date split"
+comment above `.body-display` in `docs/index.html`'s `<style>` for why that
+separation, plus the blur-time `contenteditable` reset, are both required.
 
 ## Organiser action
 
