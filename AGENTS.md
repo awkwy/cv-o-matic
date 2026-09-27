@@ -95,6 +95,22 @@ A saved draft from before this existed has `dataUrl` but no
 `originalDataUrl` — the toolbar hides "Rogner" rather than crash; keep
 that fallback if you touch this block's rendering.
 
+The photo block also carries an `enabled` boolean (default `true`, toggled
+from a checkbox next to "Photo" in the rail's Blocs panel via
+`setPhotoEnabled()` in `docs/index.html`). Disabling it drops the block from
+layout entirely — it's excluded from `layoutBlocks()`, the single filter
+every layout-facing path (`renderCanvas`, `resolveCollisions`) shares — while
+keeping `dataUrl`/`originalDataUrl` in state so re-enabling restores the
+photo without a re-upload. Disabling auto-expands Contact from its default
+`colSpan:9` to `colSpan:12` (only if Contact is still at that untouched
+default — a manually resized Contact is left alone); re-enabling reverses
+that and resets the photo block to its default grid slot, then re-runs
+`resolveCollisions` rather than hand-placing it. `aggregatedText()`, the ATS
+"photo intégrée" check, the readonly/mobile mirror, and both export
+generators all gate on `photoBlock.enabled` (not just `dataUrl`) so a
+disabled photo is excluded everywhere consistently. A saved draft from
+before this field existed has no `enabled` — normalized to `true` on load.
+
 ## LaTeX export
 
 `.tex` export is a real file download (`Blob` + `<a download>`), with a

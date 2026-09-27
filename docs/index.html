@@ -269,6 +269,12 @@
   .layer-row button.pencil:hover { color: var(--accent); background: rgba(70,242,160,.1); }
   .layer-row button.pencil.editing { color: var(--bg); background: var(--accent); }
   html:not(.is-desktop) .layer-row button.pencil { display: none; }
+  .layer-row .photo-toggle {
+    display: flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint);
+    cursor: pointer;
+  }
+  .layer-row .photo-toggle input { accent-color: var(--accent); cursor: pointer; margin: 0; }
 
   /* ---------- Canvas ---------- */
   .canvas-wrap {
@@ -814,6 +820,7 @@
       id: "photo-block", name: "Photo",
       col: 10, row: 1, colSpan: 3, rowSpan: 3,
       kind: "photo",
+      enabled: true,
       dataUrl: null,
       originalDataUrl: null
     },
@@ -910,6 +917,11 @@
         if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length === DEFAULT_BLOCKS.length) {
           state.blocks = parsed.blocks;
           state.revisions = parsed.revisions || 0;
+          // Saved draft from before the photo toggle existed has no `enabled`
+          // field — default it to true so existing photos keep showing.
+          state.blocks.forEach(function (b) {
+            if (b.kind === "photo" && typeof b.enabled !== "boolean") b.enabled = true;
+          });
           return;
         }
       }
@@ -931,6 +943,13 @@
     return null;
   }
 
+  // A disabled photo block keeps its stored image data (so re-enabling brings
+  // it back) but must not occupy a grid slot or take part in collision
+  // resolution — this is the single filter every layout-facing path shares.
+  function layoutBlocks() {
+    return state.blocks.filter(function (b) { return b.kind !== "photo" || b.enabled; });
+  }
+
   var canvasEl = document.getElementById("canvas");
   var readonlyEl = document.getElementById("readonly-list");
   var layerListEl = document.getElementById("layer-list");
@@ -947,7 +966,7 @@
 
   function renderCanvas() {
     canvasEl.innerHTML = "";
-    state.blocks.forEach(function (b) {
+    layoutBlocks().forEach(function (b) {
       var el = document.createElement("div");
       el.className = "cv-block" + (b.id === selectedId ? " selected" : "") + (b.kind === "photo" ? " photo-block" : "");
       el.id = b.id;
@@ -1330,7 +1349,7 @@
   function resolveCollisions(activeId) {
     var active = blockById(activeId);
     var placed = [active];
-    var others = state.blocks
+    var others = layoutBlocks()
       .filter(function (b) { return b.id !== activeId; })
       .sort(function (a, c) { return a.row - c.row; });
 
@@ -1357,6 +1376,29 @@
   function bumpRevision() {
     state.revisions++;
     document.getElementById("rev-count").textContent = state.revisions;
+  }
+
+  // Toggles photo-block layout participation. Disabling never deletes the
+  // stored image data — only `enabled` changes — so re-enabling brings the
+  // photo straight back. Contact is only auto-resized between its untouched
+  // default (colSpan 9) and full width (colSpan 12); a manually resized
+  // Contact is left alone in both directions.
+  function setPhotoEnabled(enabled) {
+    var photo = blockById("photo-block");
+    if (!photo || photo.enabled === enabled) return;
+    var contact = blockById("contact-block");
+    photo.enabled = enabled;
+    if (enabled) {
+      if (contact && contact.col === 1 && contact.colSpan === 12) contact.colSpan = 9;
+      photo.col = 10; photo.row = 1; photo.colSpan = 3; photo.rowSpan = 3;
+      resolveCollisions("photo-block");
+    } else if (contact && contact.col === 1 && contact.colSpan === 9) {
+      contact.colSpan = 12;
+      resolveCollisions("contact-block");
+    }
+    bumpRevision();
+    saveState();
+    renderAll();
   }
 
   // On-demand tidy pass: fits each content block's box to its own text, scales
@@ -1425,8 +1467,9 @@
     recomputeAts();
     recomputeMatch();
 
-    var stillOverlapping = state.blocks.some(function (b, i) {
-      return state.blocks.slice(i + 1).some(function (other) { return rectsOverlap(b, other); });
+    var layoutedBlocks = layoutBlocks();
+    var stillOverlapping = layoutedBlocks.some(function (b, i) {
+      return layoutedBlocks.slice(i + 1).some(function (other) { return rectsOverlap(b, other); });
     });
     if (stillOverlapping) {
       showToast("Blocs organisés, mais certains se chevauchent encore — ajustez-les manuellement.");
@@ -1458,15 +1501,16 @@
   function renderReadonly() {
     readonlyEl.innerHTML = "";
     var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    var showPhoto = !!(photoBlock && photoBlock.enabled && photoBlock.dataUrl);
     state.blocks.forEach(function (b) {
       if (b.kind === "photo") return; // folded into the contact card below instead of its own
       var el = document.createElement("div");
-      el.className = "cv-block-ro" + (b.id === "contact-block" && photoBlock && photoBlock.dataUrl ? " photo-block-ro" : "");
+      el.className = "cv-block-ro" + (b.id === "contact-block" && showPhoto ? " photo-block-ro" : "");
       el.id = (b.id === "contact-block" ? "contact-ro" : b.id + "-ro");
       var body = document.createElement("div");
       body.className = "body";
       if (b.kind === "contact") {
-        body.innerHTML = (photoBlock && photoBlock.dataUrl ? '<img class="photo-fill" src="' + photoBlock.dataUrl + '" alt="Photo de profil">' : "") + contactMarkup();
+        body.innerHTML = (showPhoto ? '<img class="photo-fill" src="' + photoBlock.dataUrl + '" alt="Photo de profil">' : "") + contactMarkup();
       } else {
         body.innerHTML = b.html;
       }
@@ -1482,6 +1526,21 @@
       row.className = "layer-row" + (b.id === selectedId ? " active" : "");
       row.dataset.id = b.id;
       row.innerHTML = '<span class="name">' + b.name + '</span>';
+
+      if (b.kind === "photo") {
+        var toggle = document.createElement("label");
+        toggle.className = "photo-toggle";
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !!b.enabled;
+        checkbox.setAttribute("aria-label", "Activer le bloc Photo");
+        checkbox.addEventListener("click", function (ev) { ev.stopPropagation(); });
+        checkbox.addEventListener("change", function () { setPhotoEnabled(checkbox.checked); });
+        toggle.appendChild(checkbox);
+        toggle.appendChild(document.createTextNode("Activer"));
+        row.appendChild(toggle);
+      }
+
       var btn = document.createElement("button");
       btn.className = "pencil";
       btn.type = "button";
@@ -1511,7 +1570,7 @@
   function aggregatedText() {
     var parts = [CONTACT.name, CONTACT.role, CONTACT.email, CONTACT.phone, CONTACT.linkedin, CONTACT.github];
     state.blocks.forEach(function (b) {
-      if (b.kind !== "contact") {
+      if (b.kind !== "contact" && b.kind !== "photo") {
         var tmp = document.createElement("div");
         tmp.innerHTML = b.html;
         parts.push(tmp.textContent || "");
@@ -1566,7 +1625,7 @@
     score += 10;
 
     var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
-    if (photoBlock && photoBlock.dataUrl) {
+    if (photoBlock && photoBlock.enabled && photoBlock.dataUrl) {
       checks.push({ ok: false, warn: true, label: "Photo intégrée — certains ATS la traitent mal ; à retirer pour une candidature 100 % en ligne" });
     }
 
@@ -1764,6 +1823,7 @@
 
   function generateLatex() {
     var photoBlock = state.blocks.filter(function (b) { return b.kind === "photo"; })[0];
+    var photoActive = !!(photoBlock && photoBlock.enabled && photoBlock.dataUrl);
     var lines = [];
     lines.push("% Généré depuis l'éditeur CV Blueprint — brouillon à revoir avant compilation.");
     lines.push("\\documentclass[11pt]{article}");
@@ -1775,7 +1835,7 @@
     lines.push("\\pagestyle{empty}");
     lines.push("\\setlist[itemize]{leftmargin=1.4em,itemsep=1pt,topsep=2pt}");
     lines.push("\\begin{document}");
-    if (photoBlock && photoBlock.dataUrl) {
+    if (photoActive) {
       lines.push("% Photo ajoutée dans l'outil — réinsérez-la manuellement, par ex. :");
       lines.push("% \\includegraphics[width=2.2cm]{photo.jpg}");
     }
@@ -1801,7 +1861,7 @@
     lines.push(CONTACT.name);
     lines.push(CONTACT.role);
     lines.push(CONTACT.email + " · " + CONTACT.phone + " · " + CONTACT.linkedin + " · " + CONTACT.github);
-    if (photoBlock && photoBlock.dataUrl) lines.push("[Photo — non incluse dans cet export texte]");
+    if (photoBlock && photoBlock.enabled && photoBlock.dataUrl) lines.push("[Photo — non incluse dans cet export texte]");
     lines.push("");
     orderedContentBlocks().forEach(function (b) {
       var tmp = document.createElement("div");
