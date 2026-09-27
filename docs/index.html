@@ -1394,6 +1394,7 @@
       resolveCollisions("photo-block");
     } else if (contact && contact.col === 1 && contact.colSpan === 9) {
       contact.colSpan = 12;
+      resolveCollisions("contact-block");
     }
     bumpRevision();
     saveState();
@@ -1466,8 +1467,9 @@
     recomputeAts();
     recomputeMatch();
 
-    var stillOverlapping = state.blocks.some(function (b, i) {
-      return state.blocks.slice(i + 1).some(function (other) { return rectsOverlap(b, other); });
+    var layoutedBlocks = layoutBlocks();
+    var stillOverlapping = layoutedBlocks.some(function (b, i) {
+      return layoutedBlocks.slice(i + 1).some(function (other) { return rectsOverlap(b, other); });
     });
     if (stillOverlapping) {
       showToast("Blocs organisés, mais certains se chevauchent encore — ajustez-les manuellement.");
