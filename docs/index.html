@@ -419,6 +419,26 @@
   .cv-block .body li { margin-bottom: 3px; }
   .cv-block .body p { margin: 0 0 6px; }
   .cv-block .body p:last-child { margin-bottom: 0; }
+  /* Safety net for every text node in a block, not just justified <p> — a single
+     word too long for the box (no hyphenation point, or dictionary unavailable)
+     must break rather than overflow the box width into the block next to it. */
+  .cv-block .body,
+  .readonly-list .cv-block-ro .body {
+    overflow-wrap: break-word;
+  }
+  /* Justify flowing prose (not <li> bullets — short lines make the gap trap worse).
+     hyphens:auto needs a known lang on an ancestor to do anything (root <html> has lang="fr").
+     hyphenate-limit-chars keeps hyphenation from stranding a tiny orphan fragment
+     alone on a line — only hyphenate words of 6+ chars, min 3 chars each side of the break. */
+  .cv-block .body p,
+  .readonly-list .cv-block-ro .body p {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphenate-limit-chars: 6 3 3;
+  }
   .cv-block .body strong { color: var(--accent); font-weight: 600; }
   .cv-block .body .skill-cat { font-weight: 600; color: var(--ink); }
 
@@ -470,6 +490,77 @@
   }
   .photo-block-ro { position: relative; }
   .photo-block-ro .photo-fill { width: 96px; height: 96px; border-radius: 4px; float: right; margin-left: 12px; }
+
+  .photo-toolbar {
+    position: absolute; left: 4px; right: 4px; bottom: 4px;
+    display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;
+  }
+  .photo-toolbar .photo-upload-btn { position: static; }
+  button.photo-action {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    background: rgba(70,242,160,.08);
+    border: 1px solid var(--accent-dim);
+    border-radius: 3px;
+    padding: 3px 6px;
+    cursor: pointer;
+  }
+  .photo-delete-btn {
+    position: absolute; top: 4px; right: 4px;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(255,107,107,.16);
+    border: 1px solid #6b2626;
+    color: var(--critical);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .photo-delete-btn:hover { background: rgba(255,107,107,.32); }
+
+  /* ---------- Photo crop overlay ---------- */
+  .crop-overlay {
+    position: fixed; inset: 0;
+    background: rgba(2, 10, 7, 0.72);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .crop-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    max-width: 90vw;
+  }
+  .crop-viewport {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: #000;
+    cursor: grab;
+    touch-action: none;
+  }
+  .crop-viewport.dragging { cursor: grabbing; }
+  .crop-viewport img {
+    position: absolute; left: 0; top: 0;
+    transform-origin: top left;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+  .crop-zoom-row {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 10px; color: var(--ink-dim);
+  }
+  .crop-zoom-row input[type="range"] { flex: 1; }
+  .crop-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
   /* ---------- Export panel ---------- */
   .export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -583,12 +674,18 @@
       border: none !important;
       box-shadow: none !important;
       background: transparent !important;
-      overflow: visible !important;
+      overflow: hidden !important;
     }
     .cv-block .handle, .cv-block .resize { display: none !important; }
-    .cv-block .body { overflow: visible !important; color: #141414 !important; }
+    /* Clip, don't bleed: a block whose content doesn't fit must not visually
+       spill into the block next to it — overflow:visible here previously let
+       oversized text intrude on a neighboring block even though the blocks'
+       own boxes (via resolveCollisions) never overlap. The on-screen editor's
+       overflow banner is the mechanism for catching this before export. */
+    .cv-block .body { overflow: hidden !important; color: #141414 !important; }
     .cv-block .body[contenteditable] { outline: none !important; cursor: default !important; }
-    .photo-block .photo-upload-btn, .photo-block .photo-empty { display: none !important; }
+    .photo-block .photo-upload-btn, .photo-block .photo-empty, .photo-block .photo-toolbar,
+    .photo-block .photo-delete-btn, .crop-overlay { display: none !important; }
     @page { size: A4; margin: 0; }
   }
 </style>
@@ -717,7 +814,8 @@
       id: "photo-block", name: "Photo",
       col: 10, row: 1, colSpan: 3, rowSpan: 3,
       kind: "photo",
-      dataUrl: null
+      dataUrl: null,
+      originalDataUrl: null
     },
     {
       id: "summary-block", name: "Profil",
@@ -914,12 +1012,41 @@
       img.src = b.dataUrl;
       img.alt = "Photo de profil";
       wrap.appendChild(img);
+
+      var toolbar = document.createElement("div");
+      toolbar.className = "photo-toolbar";
+
       var change = document.createElement("label");
       change.className = "photo-upload-btn";
-      change.style.position = "absolute"; change.style.right = "4px"; change.style.bottom = "4px";
       change.textContent = "Changer";
       change.appendChild(photoInput(b));
-      wrap.appendChild(change);
+      toolbar.appendChild(change);
+
+      // Crop needs the higher-res source kept alongside dataUrl; older saved
+      // drafts predating that field simply don't get the button (no crash).
+      if (b.originalDataUrl) {
+        var cropBtn = document.createElement("button");
+        cropBtn.type = "button";
+        cropBtn.className = "photo-action";
+        cropBtn.textContent = "Rogner";
+        cropBtn.addEventListener("click", function () { openCropOverlay(b); });
+        toolbar.appendChild(cropBtn);
+      }
+
+      wrap.appendChild(toolbar);
+
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "photo-delete-btn";
+      delBtn.setAttribute("aria-label", "Supprimer la photo");
+      delBtn.textContent = "×";
+      delBtn.addEventListener("click", function () {
+        b.dataUrl = null;
+        b.originalDataUrl = null;
+        saveState();
+        renderAll();
+      });
+      wrap.appendChild(delBtn);
     } else {
       var empty = document.createElement("label");
       empty.className = "photo-empty";
@@ -940,8 +1067,14 @@
     input.addEventListener("change", function () {
       var file = input.files && input.files[0];
       if (!file) return;
-      downscaleImage(file, 320, 320, 0.85).then(function (dataUrl) {
-        b.dataUrl = dataUrl;
+      // Keep a moderately-higher-resolution copy purely as crop source material —
+      // the display dataUrl alone isn't enough resolution to crop from usefully.
+      Promise.all([
+        downscaleImage(file, 320, 320, 0.85),
+        downscaleImage(file, 1000, 1000, 0.9)
+      ]).then(function (results) {
+        b.dataUrl = results[0];
+        b.originalDataUrl = results[1];
         saveState();
         renderAll();
       }).catch(function () {
@@ -972,6 +1105,136 @@
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
+    });
+  }
+
+  // Lightweight pan+zoom crop dialog: shows the higher-res originalDataUrl in a
+  // viewport fixed to the block's own on-screen aspect ratio, then bakes the
+  // current pan/zoom into a new canvas render (same downscale/quality treatment
+  // as upload) that replaces dataUrl. No rotation, no free-aspect crop.
+  function openCropOverlay(b) {
+    var blockEl = document.getElementById(b.id);
+    var blockRect = blockEl ? blockEl.getBoundingClientRect() : { width: 300, height: 300 };
+    var aspect = (blockRect.width && blockRect.height) ? blockRect.width / blockRect.height : 1;
+
+    var VH = clamp(Math.round(360 / aspect), 120, 480);
+    var VW = clamp(Math.round(VH * aspect), 120, 520);
+    VH = Math.round(VW / aspect);
+
+    var overlay = document.createElement("div");
+    overlay.className = "crop-overlay";
+    var panel = document.createElement("div");
+    panel.className = "crop-panel";
+
+    var viewport = document.createElement("div");
+    viewport.className = "crop-viewport";
+    viewport.style.width = VW + "px";
+    viewport.style.height = VH + "px";
+
+    var img = document.createElement("img");
+    img.src = b.originalDataUrl;
+    img.alt = "";
+    viewport.appendChild(img);
+    panel.appendChild(viewport);
+
+    var zoomRow = document.createElement("div");
+    zoomRow.className = "crop-zoom-row";
+    var zoomLabel = document.createElement("span");
+    zoomLabel.textContent = "Zoom";
+    var zoomInput = document.createElement("input");
+    zoomInput.type = "range";
+    zoomInput.min = "1"; zoomInput.max = "3"; zoomInput.step = "0.01"; zoomInput.value = "1";
+    zoomRow.appendChild(zoomLabel);
+    zoomRow.appendChild(zoomInput);
+    panel.appendChild(zoomRow);
+
+    var actions = document.createElement("div");
+    actions.className = "crop-actions";
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button"; cancelBtn.className = "ghost"; cancelBtn.textContent = "Annuler";
+    var okBtn = document.createElement("button");
+    okBtn.type = "button"; okBtn.className = "ghost"; okBtn.textContent = "Valider";
+    actions.appendChild(cancelBtn);
+    actions.appendChild(okBtn);
+    panel.appendChild(actions);
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    var natW = 0, natH = 0, scale0 = 1, zoom = 1, px = 0, py = 0;
+
+    function layout() {
+      var dispW = natW * scale0 * zoom;
+      var dispH = natH * scale0 * zoom;
+      px = clamp(px, VW - dispW, 0);
+      py = clamp(py, VH - dispH, 0);
+      img.style.width = dispW + "px";
+      img.style.height = dispH + "px";
+      img.style.transform = "translate(" + px + "px," + py + "px)";
+    }
+
+    function onImgReady() {
+      natW = img.naturalWidth; natH = img.naturalHeight;
+      scale0 = Math.max(VW / natW, VH / natH);
+      zoom = 1;
+      px = (VW - natW * scale0) / 2;
+      py = (VH - natH * scale0) / 2;
+      layout();
+    }
+    if (img.complete && img.naturalWidth) onImgReady();
+    else img.onload = onImgReady;
+
+    zoomInput.addEventListener("input", function () {
+      zoom = parseFloat(zoomInput.value) || 1;
+      layout();
+    });
+
+    var dragging = false, startX = 0, startY = 0, startPx = 0, startPy = 0;
+    viewport.addEventListener("pointerdown", function (ev) {
+      if (!natW) return;
+      dragging = true;
+      viewport.classList.add("dragging");
+      startX = ev.clientX; startY = ev.clientY;
+      startPx = px; startPy = py;
+      viewport.setPointerCapture(ev.pointerId);
+    });
+    viewport.addEventListener("pointermove", function (ev) {
+      if (!dragging) return;
+      px = startPx + (ev.clientX - startX);
+      py = startPy + (ev.clientY - startY);
+      layout();
+    });
+    function stopDrag() { dragging = false; viewport.classList.remove("dragging"); }
+    viewport.addEventListener("pointerup", stopDrag);
+    viewport.addEventListener("pointercancel", stopDrag);
+
+    function close() {
+      document.body.removeChild(overlay);
+    }
+    cancelBtn.addEventListener("click", close);
+    okBtn.addEventListener("click", function () {
+      if (!natW) { close(); return; }
+      var maxDim = 480;
+      var outW, outH;
+      if (aspect >= 1) { outW = maxDim; outH = Math.round(maxDim / aspect); }
+      else { outH = maxDim; outW = Math.round(maxDim * aspect); }
+      var sx = -px / (scale0 * zoom);
+      var sy = -py / (scale0 * zoom);
+      var sW = VW / (scale0 * zoom);
+      var sH = VH / (scale0 * zoom);
+      var cvs = document.createElement("canvas");
+      cvs.width = outW; cvs.height = outH;
+      var ctx = cvs.getContext("2d");
+      ctx.drawImage(img, sx, sy, sW, sH, 0, 0, outW, outH);
+      try {
+        b.dataUrl = cvs.toDataURL("image/jpeg", 0.85);
+        saveState();
+        renderAll();
+        close();
+      } catch (e) {
+        showToast("Impossible d'enregistrer le recadrage.");
+        close();
+      }
     });
   }
 
