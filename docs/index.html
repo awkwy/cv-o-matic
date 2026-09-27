@@ -491,6 +491,19 @@
     outline-offset: -1px;
     cursor: text;
   }
+  /* Classique's meta-date split (see applyMetaTabularSplit() in the script)
+     must never touch the contenteditable .body node itself, or blurring it
+     bakes the split spans into b.html permanently. Instead a separate,
+     never-editable .body-display sibling carries the split markup, and pure
+     CSS attribute selectors (not a JS timing-dependent toggle) swap which
+     one is shown based on the live contenteditable state. */
+  .cv-block .body-display { display: none; }
+  html[data-template="classique"] .cv-block .body:not([contenteditable="true"]) {
+    display: none;
+  }
+  html[data-template="classique"] .cv-block .body:not([contenteditable="true"]) ~ .body-display {
+    display: block;
+  }
   .cv-block .body h3 {
     font-family: var(--cv-display);
     font-size: 1.13em;
@@ -1170,14 +1183,25 @@
 
       var body = document.createElement("div");
       body.className = "body";
+      var bodyDisplay = null;
       if (b.kind === "contact") body.innerHTML = contactMarkup();
       else if (b.kind === "photo") body.appendChild(photoBodyMarkup(b));
       else {
         body.innerHTML = b.html;
-        if (state.template === "classique") applyMetaTabularSplit(body);
         body.style.fontSize = (b.fontSize || DEFAULT_BODY_FONT_SIZE) + "px";
+        if (state.template === "classique") {
+          // Never-editable sibling: carries the meta-date split so the
+          // contenteditable body above is never mutated by it (see the
+          // .body-display CSS comment for why this can't be one element).
+          bodyDisplay = document.createElement("div");
+          bodyDisplay.className = "body body-display";
+          bodyDisplay.innerHTML = b.html;
+          bodyDisplay.style.fontSize = body.style.fontSize;
+          applyMetaTabularSplit(bodyDisplay);
+        }
       }
       el.appendChild(body);
+      if (bodyDisplay) el.appendChild(bodyDisplay);
 
       var resize = document.createElement("div");
       resize.className = "resize";
@@ -1196,7 +1220,13 @@
       }
       el.addEventListener("pointerdown", function () { selectBlock(b.id); });
       body.addEventListener("blur", function () {
-        if (b.kind !== "contact" && b.kind !== "photo") b.html = body.innerHTML;
+        if (b.kind !== "contact" && b.kind !== "photo") {
+          b.html = body.innerHTML;
+          if (bodyDisplay) {
+            bodyDisplay.innerHTML = b.html;
+            applyMetaTabularSplit(bodyDisplay);
+          }
+        }
         saveState();
       });
     });
@@ -1586,6 +1616,18 @@
   // its font-size to use that box evenly (shrink to fit / grow to fill), then
   // re-packs with the same collision resolution manual drag/resize already use.
   // Contact and photo blocks are left exactly as the user sized them.
+  // Classique keeps two ".body" elements per text block (see the
+  // .body-display CSS comment) and only one is ever actually laid out at a
+  // time — scrollHeight/clientHeight on the display:none one always read 0,
+  // so measurement must target whichever one is currently rendered.
+  function visibleBodyEl(el) {
+    var bodies = el.querySelectorAll(".body");
+    for (var i = 0; i < bodies.length; i++) {
+      if (bodies[i].offsetParent !== null) return bodies[i];
+    }
+    return bodies[0];
+  }
+
   function organizeBlocks() {
     if (!isDesktop()) return;
     var cellH = canvasEl.getBoundingClientRect().height / GRID_ROWS;
@@ -1595,7 +1637,7 @@
       if (b.kind !== "text") return;
       var el = document.getElementById(b.id);
       if (!el) return;
-      var body = el.querySelector(".body");
+      var body = visibleBodyEl(el);
       var handle = el.querySelector(".handle");
       var handleH = handle ? handle.getBoundingClientRect().height : 0;
 
@@ -1635,7 +1677,7 @@
         }
       }
       b.fontSize = fs;
-      body.style.fontSize = fs + "px";
+      el.querySelectorAll(".body").forEach(function (bd) { bd.style.fontSize = fs + "px"; });
     });
 
     // 3) Re-pack with the exact same collision logic manual drag/resize use —
@@ -1664,7 +1706,7 @@
     state.blocks.forEach(function (b) {
       var el = document.getElementById(b.id);
       if (!el) return;
-      var body = el.querySelector(".body");
+      var body = visibleBodyEl(el);
       var over = body.scrollHeight > body.clientHeight + 1;
       el.classList.toggle("overflow", over);
       if (over) anyOverflow = true;
