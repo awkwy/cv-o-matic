@@ -14,7 +14,8 @@ page, with:
 - Live ATS-friendliness scoring and a job-description match score (paste a
   job posting to see keyword overlap and missing skills).
 - Optional photo upload with client-side downscaling, inline crop/reposition,
-  and delete — no upload leaves the browser.
+  delete, and an enable/disable toggle that reclaims its layout space — no
+  upload leaves the browser.
 - Draft persistence via `localStorage` — reload the page and your edits are
   still there.
 - Desktop-only editing, with a read-only stacked fallback view on narrow
