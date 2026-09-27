@@ -494,9 +494,12 @@
   /* Classique's meta-date split (see applyMetaTabularSplit() in the script)
      must never touch the contenteditable .body node itself, or blurring it
      bakes the split spans into b.html permanently. Instead a separate,
-     never-editable .body-display sibling carries the split markup, and pure
-     CSS attribute selectors (not a JS timing-dependent toggle) swap which
-     one is shown based on the live contenteditable state. */
+     never-editable .body-display sibling carries the split markup, shown via
+     this attribute selector. The blur handler resets contenteditable back to
+     "false" as soon as focus leaves (see renderCanvas()), so this reflects
+     genuinely-being-edited, not "was edited at some point" — a stale "true"
+     left over from a prior edit session would otherwise hide the date split
+     on print/export for that block. */
   .cv-block .body-display { display: none; }
   html[data-template="classique"] .cv-block .body:not([contenteditable="true"]) {
     display: none;
@@ -1227,6 +1230,7 @@
             applyMetaTabularSplit(bodyDisplay);
           }
         }
+        if (editBtn) closeEdit(body, editBtn);
         saveState();
       });
     });
@@ -1468,12 +1472,19 @@
     });
   }
 
+  function closeEdit(body, btn) {
+    body.setAttribute("contenteditable", "false");
+    if (btn) btn.classList.remove("editing");
+    recomputeAts();
+    checkOverflow();
+  }
+
   function toggleEdit(id, body, btn) {
     var editing = body.getAttribute("contenteditable") === "true";
-    body.setAttribute("contenteditable", editing ? "false" : "true");
-    btn.classList.toggle("editing", !editing);
-    if (!editing) { body.focus(); }
-    else { recomputeAts(); checkOverflow(); }
+    if (editing) { closeEdit(body, btn); return; }
+    body.setAttribute("contenteditable", "true");
+    btn.classList.add("editing");
+    body.focus();
   }
 
   function selectBlock(id) {
